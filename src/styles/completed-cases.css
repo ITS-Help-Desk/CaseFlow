@@ -1,0 +1,48 @@
+/* Completed cases container */
+#completedContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+/* Completed list item styles */
+.completed-list-item {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    border-radius: 4px;
+    margin-bottom: 4px;
+    background-color: #1e1e1e;
+}
+
+.completed-list-item:hover {
+    background-color: #252525;
+}
+
+.completed-case-number {
+    font-family: monospace;
+    font-size: 1.1em;
+    margin-right: 12px;
+    color: #dcddde;
+}
+
+.completed-info {
+    color: #72767d;
+    font-size: 0.9em;
+    margin-left: auto;
+}
+
+/* Completed view container */
+#completedView {
+    display: none;
+}
+
+#completedView h2 {
+    color: #ffffff;
+    margin-bottom: 20px;
+}
+
+/* Completed case card styles */
+#completedContainer .case-card {
+    opacity: 0.8;
+} 

@@ -1,0 +1,105 @@
+/* Sidebar styles */
+.sidebar {
+    width: 60px;
+    background-color: #1a1a1a;
+    height: 100vh;
+    padding: 8px 0;
+    transition: all 0.2s ease-in-out;
+    overflow-x: hidden;
+    position: relative;
+    border-right: 1px solid #2d2d2d;
+}
+
+.sidebar:hover {
+    width: 240px;
+}
+
+/* Sidebar item styles */
+.sidebar-item {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    color: #b0b0b0;
+    border-radius: 4px;
+    cursor: pointer;
+    margin: 4px 8px;
+    transition: all 0.2s ease-in-out;
+    position: relative;
+    min-height: 36px;
+}
+
+.sidebar:hover .sidebar-item {
+    transform: translateX(0);
+}
+
+.sidebar-item:hover {
+    background-color: #252525;
+    color: #ffffff;
+}
+
+.sidebar-item.active {
+    color: #ffffff;
+    background-color: #2d2d2d;
+}
+
+.channel-icon {
+    width: 20px;
+    height: 20px;
+    position: absolute;
+    left: 12px;
+    opacity: 0.7;
+    flex-shrink: 0;
+    transition: all 0.2s ease-in-out;
+}
+
+.sidebar:hover .channel-icon {
+    margin-right: 0;
+}
+
+.sidebar-item span {
+    position: absolute;
+    left: 40px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.2s ease-in-out;
+}
+
+.sidebar:hover .sidebar-item span {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Icon styles */
+.sidebar-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 1;
+    flex-shrink: 0;
+}
+
+.sidebar-text {
+    margin-left: 12px;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #b9bbbe;
+    position: static;
+}
+
+.sidebar:hover .sidebar-text {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.category-header:hover .expand-arrow {
+    opacity: 1;
+} 

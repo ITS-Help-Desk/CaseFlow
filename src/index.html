@@ -32,15 +32,30 @@
             gap: 15px;
         }
     </style>
-    <!-- <link rel="stylesheet" href="styles/left-sidebar.css">
-    <link rel="stylesheet" href="styles/right-sidebar.css">
+    <link rel="stylesheet" href="styles/left-sidebar.css">
+    <!-- <link rel="stylesheet" href="styles/right-sidebar.css"> -->
     <link rel="stylesheet" href="styles/claim-case.css">
     <link rel="stylesheet" href="styles/completed-cases.css">
-    <link rel="stylesheet" href="styles/parent-cases.css"> -->
+    <!-- <link rel="stylesheet" href="styles/parent-cases.css"> -->
 </head>
 
 <!-- Main body structure -->
 <body>
+    <!-- Left sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-item active" data-view="claim">
+            <svg class="channel-icon" width="20" height="20" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/>
+            </svg>
+            <span>claim-case</span>
+        </div>
+        <div class="sidebar-item" data-view="completed">
+            <svg class="channel-icon" width="20" height="20" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+            </svg>
+            <span>completed-cases</span>
+        </div>
+    </div>
 
     <!-- Main content area -->
     <div class="main-content">
@@ -57,6 +72,25 @@
             </div>
         </div>
 
+        <!-- Completed view -->
+        <div id="completedView" style="display: none;">
+            <h2>Completed Cases</h2>
+            <div id="completedContainer">
+                <!-- Completed cases will be displayed here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Claim modal -->
+    <div id="claimModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h2>Claim Case</h2>
+            <input type="text" id="caseNumberInput" placeholder="Enter case number">
+            <div class="modal-buttons">
+                <button class="btn btn-unclaim" onclick="claimCase.closeModal()">Cancel</button>
+                <button class="btn btn-claim" onclick="claimCase.submitClaim()">Claim</button>
+            </div>
+        </div>
     </div>
 
     <!-- JavaScript functionality -->
@@ -69,9 +103,9 @@
         });
     </script>
     <script type="module">
-        // import Sidebar from './components/left-sidebar.js';
-        // import ClaimCase from './components/claim-case.js';
-        // import CompletedCases from './components/completed-cases.js';
+        import Sidebar from './components/left-sidebar.js';
+        import ClaimCase from './components/claim-case.js';
+        import CompletedCases from './components/completed-cases.js';
         // import ParentCases from './components/parent-cases.js';
         // import RightSidebar from './components/right-sidebar.js';
 
