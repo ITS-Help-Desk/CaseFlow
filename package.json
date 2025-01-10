@@ -1,0 +1,25 @@
+{
+    "name": "claimapp",
+    "version": "1.0.0",
+    "description": "",
+    "main": "./src/main.js",
+    "scripts": {
+        "start": "electron .",
+        "dev": "electron . --debug",
+        "build": "electron-builder"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/AdityaPrakash2/ClaimApp.git"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/AdityaPrakash2/ClaimApp/issues"
+    },
+    "homepage": "https://github.com/AdityaPrakash2/ClaimApp#readme",
+    "devDependencies": {
+        "electron": "^33.3.1"
+    }
+}
