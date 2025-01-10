@@ -1,0 +1,50 @@
+#pingsContainer {
+    background-color: #1e1e1e;
+    border-radius: 8px;
+    border: 1px solid #2d2d2d;
+}
+
+.ping-item {
+    padding: 16px;
+    border-bottom: 1px solid #2d2d2d;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.ping-item:hover {
+    background-color: #252525;
+}
+
+.ping-item.unread {
+    background-color: #252525;
+}
+
+.ping-item.unread:hover {
+    background-color: #2d2d2d;
+}
+
+.ping-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 4px;
+}
+
+.ping-title {
+    color: #ffffff;
+    font-weight: 500;
+}
+
+.ping-time {
+    color: #72767d;
+    font-size: 0.9em;
+}
+
+.ping-content {
+    color: #b0b0b0;
+}
+
+.unread .ping-title::before {
+    content: "•";
+    color: #5865f2;
+    margin-right: 6px;
+} 

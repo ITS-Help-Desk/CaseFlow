@@ -37,12 +37,23 @@
     <link rel="stylesheet" href="styles/claim-case.css">
     <link rel="stylesheet" href="styles/completed-cases.css">
     <!-- <link rel="stylesheet" href="styles/parent-cases.css"> -->
+    <link rel="stylesheet" href="styles/announcements.css">
+    <link rel="stylesheet" href="styles/resources.css">
+    <link rel="stylesheet" href="styles/logs-chat.css">
+    <link rel="stylesheet" href="styles/home.css">
+    <link rel="stylesheet" href="styles/pings.css">
 </head>
 
 <!-- Main body structure -->
 <body>
     <!-- Left sidebar -->
     <div class="sidebar">
+        <div class="sidebar-item" data-view="home">
+            <svg class="channel-icon" width="20" height="20" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+            </svg>
+            <span>home</span>
+        </div>
         <div class="sidebar-item active" data-view="claim">
             <svg class="channel-icon" width="20" height="20" viewBox="0 0 24 24">
                 <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/>
@@ -55,12 +66,61 @@
             </svg>
             <span>completed-cases</span>
         </div>
+        <div class="sidebar-item" data-view="announcements">
+            <svg class="channel-icon" width="20" height="20" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M18 11v2h4v-2h-4zm-2 6.61c.96.71 2.21 1.65 3.2 2.39.4-.53.8-1.07 1.2-1.6-.99-.74-2.24-1.68-3.2-2.4-.4.54-.8 1.08-1.2 1.61zM20.4 5.6c-.4-.53-.8-1.07-1.2-1.6-.99.74-2.24 1.68-3.2 2.4.4.53.8 1.07 1.2 1.6.96-.71 2.21-1.65 3.2-2.4zM4 9c-1.1 0-2 .9-2 2v2c0 1.1.9 2 2 2h1v4h2v-4h1l5 3V6L8 9H4zm11.5 3c0-1.33-.58-2.53-1.5-3.35v6.69c.92-.81 1.5-2.01 1.5-3.34z"/>
+            </svg>
+            <span>announcements</span>
+        </div>
+        <div class="sidebar-item" data-view="resources">
+            <svg class="channel-icon" width="20" height="20" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9H9V9h10v2zm-4 4H9v-2h6v2zm4-8H9V5h10v2z"/>
+            </svg>
+            <span>resources</span>
+        </div>
+        <div class="sidebar-item" data-view="logs">
+            <svg class="channel-icon" width="20" height="20" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/>
+            </svg>
+            <span>logs-chat</span>
+        </div>
+        <div class="sidebar-item" data-view="pings">
+            <svg class="channel-icon" width="20" height="20" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z"/>
+            </svg>
+            <span>pings</span>
+        </div>
     </div>
 
     <!-- Main content area -->
     <div class="main-content">
         <h1>Cases</h1>
         
+        <!-- Home view -->
+        <div id="homeView" style="display: none;">
+            <h2>Welcome to CaseFlow</h2>
+            <div id="homeContainer">
+                <div class="dashboard-stats">
+                    <div class="stat-card">
+                        <h3>Active Cases</h3>
+                        <span class="stat-number">0</span>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Completed Today</h3>
+                        <span class="stat-number">0</span>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Total Cases</h3>
+                        <span class="stat-number">0</span>
+                    </div>
+                </div>
+                <div class="recent-activity">
+                    <h3>Recent Activity</h3>
+                    <div class="activity-list"></div>
+                </div>
+            </div>
+        </div>
+
         <!-- Claim view -->
         <div id="claimView">
             <div id="claimSection">
@@ -77,6 +137,42 @@
             <h2>Completed Cases</h2>
             <div id="completedContainer">
                 <!-- Completed cases will be displayed here -->
+            </div>
+        </div>
+
+        <!-- Announcements view -->
+        <div id="announcementsView" style="display: none;">
+            <h2>Announcements</h2>
+            <div id="announcementsContainer">
+                <!-- Announcements will be displayed here -->
+            </div>
+        </div>
+
+        <!-- Resources view -->
+        <div id="resourcesView" style="display: none;">
+            <h2>Resources</h2>
+            <div id="resourcesContainer">
+                <!-- Resources will be displayed here -->
+            </div>
+        </div>
+
+        <!-- Logs view -->
+        <div id="logsView" style="display: none;">
+            <h2>Logs Chat</h2>
+            <div id="logsContainer">
+                <div class="logs-messages"></div>
+                <div class="logs-input-container">
+                    <input type="text" id="logsInput" placeholder="Type your message...">
+                    <button class="btn btn-send">Send</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pings view -->
+        <div id="pingsView" style="display: none;">
+            <h2>Notifications</h2>
+            <div id="pingsContainer">
+                <div class="pings-list"></div>
             </div>
         </div>
     </div>
@@ -106,18 +202,29 @@
         import Sidebar from './components/left-sidebar.js';
         import ClaimCase from './components/claim-case.js';
         import CompletedCases from './components/completed-cases.js';
-        // import ParentCases from './components/parent-cases.js';
-        // import RightSidebar from './components/right-sidebar.js';
+        import Announcements from './components/announcements.js';
+        import Resources from './components/resources.js';
+        import LogsChat from './components/logs-chat.js';
+        import Home from './components/home.js';
+        import Pings from './components/pings.js';
 
         // Initialize components
+        const home = new Home();
         const claimCase = new ClaimCase();
         const completedCases = new CompletedCases();
-        const parentCases = new ParentCases();
+        const announcements = new Announcements();
+        const resources = new Resources();
+        const logsChat = new LogsChat();
+        const pings = new Pings();
 
-        // Make necessary instances globally accessible for onclick handlers
+        // Make necessary instances globally accessible
+        window.home = home;
         window.claimCase = claimCase;
         window.completedCases = completedCases;
-        window.parentCases = parentCases;
+        window.announcements = announcements;
+        window.resources = resources;
+        window.logsChat = logsChat;
+        window.pings = pings;
     </script>
 </body>
 </html>

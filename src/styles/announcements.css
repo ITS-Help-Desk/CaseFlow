@@ -1,0 +1,23 @@
+.announcement-item {
+    background-color: #1e1e1e;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+    border: 1px solid #2d2d2d;
+}
+
+.announcement-item h3 {
+    color: #ffffff;
+    margin-top: 0;
+    margin-bottom: 8px;
+}
+
+.announcement-item p {
+    color: #b0b0b0;
+    margin-bottom: 12px;
+}
+
+.announcement-date {
+    color: #72767d;
+    font-size: 0.9em;
+} 

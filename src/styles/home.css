@@ -1,0 +1,62 @@
+#homeContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.dashboard-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+}
+
+.stat-card {
+    background-color: #1e1e1e;
+    border-radius: 8px;
+    padding: 16px;
+    border: 1px solid #2d2d2d;
+}
+
+.stat-card h3 {
+    color: #b0b0b0;
+    margin: 0 0 8px 0;
+    font-size: 0.9em;
+}
+
+.stat-number {
+    color: #ffffff;
+    font-size: 2em;
+    font-weight: 600;
+}
+
+.recent-activity {
+    background-color: #1e1e1e;
+    border-radius: 8px;
+    padding: 16px;
+    border: 1px solid #2d2d2d;
+}
+
+.activity-item {
+    padding: 12px;
+    border-bottom: 1px solid #2d2d2d;
+}
+
+.activity-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 4px;
+}
+
+.activity-user {
+    color: #5865f2;
+    font-weight: 500;
+}
+
+.activity-time {
+    color: #72767d;
+    font-size: 0.9em;
+}
+
+.activity-content {
+    color: #dcddde;
+} 
