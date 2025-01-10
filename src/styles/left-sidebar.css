@@ -26,6 +26,8 @@
     transition: all 0.2s ease-in-out;
     position: relative;
     min-height: 36px;
+    user-select: none;
+    cursor: grab;
 }
 
 .sidebar:hover .sidebar-item {
@@ -102,4 +104,17 @@
 
 .category-header:hover .expand-arrow {
     opacity: 1;
+}
+
+.sidebar-item:active {
+    cursor: grabbing;
+}
+
+.sidebar-item.dragging {
+    opacity: 0.5;
+    background-color: #2d2d2d;
+}
+
+.sidebar-item.drag-over {
+    border-top: 2px solid #5865f2;
 } 
