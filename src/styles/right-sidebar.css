@@ -1,0 +1,47 @@
+.right-sidebar {
+    width: 280px;
+    background-color: #1a1a1a;
+    height: 100vh;
+    padding: 8px 0;
+    border-left: 1px solid #2d2d2d;
+    flex-shrink: 0;
+}
+
+.right-sidebar-header {
+    padding: 16px;
+    border-bottom: 1px solid #2d2d2d;
+}
+
+.right-sidebar-header h3 {
+    color: #ffffff;
+    margin: 0;
+    font-size: 1em;
+    font-weight: 500;
+}
+
+.right-sidebar-content {
+    padding: 16px;
+}
+
+.header-with-button {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.add-parent-case-btn {
+    background-color: #5865f2;
+    border: none;
+    border-radius: 4px;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: white;
+}
+
+.add-parent-case-btn:hover {
+    background-color: #4752c4;
+} 
