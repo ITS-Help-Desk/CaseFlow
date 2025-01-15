@@ -43,4 +43,7 @@ Thumbs.db
 *.tgz
 
 # Yarn Integrity file
-.yarn-integrity 
+.yarn-integrity
+
+# Firebase config
+src/firebase-config.js 
