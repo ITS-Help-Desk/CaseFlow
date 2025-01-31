@@ -3,7 +3,7 @@
     width: 60px;
     background-color: #1a1a1a;
     height: 100vh;
-    padding: 8px 0;
+    padding: 8px 0 52px 0;
     transition: all 0.2s ease-in-out;
     overflow-x: hidden;
     position: relative;
@@ -117,4 +117,66 @@
 
 .sidebar-item.drag-over {
     border-top: 2px solid #5865f2;
+}
+
+/* Status indicator styles */
+.status-indicator {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 60px;
+    padding: 8px 12px;
+    margin: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background-color: #1a1a1a;
+    border-top: 1px solid #2d2d2d;
+    border-radius: 4px;
+    min-height: 36px;
+    position: relative;
+    z-index: 100;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #747f8d;
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.status-dot.connected {
+    background-color: #3ba55c;
+}
+
+.status-dot.error {
+    background-color: #ed4245;
+}
+
+.status-text {
+    color: #72767d;
+    font-size: 0.9em;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    position: absolute;
+    left: 40px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.sidebar:hover .status-text {
+    opacity: 1;
+}
+
+.sidebar:hover .status-indicator {
+    width: 240px;
+}
+
+.sidebar:hover .status-dot {
+    /* Remove this rule entirely as we don't want the dot to move */
 } 
