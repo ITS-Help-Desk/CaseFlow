@@ -21,8 +21,5 @@
     "homepage": "https://github.com/AdityaPrakash2/ClaimApp#readme",
     "devDependencies": {
         "electron": "^33.3.1"
-    },
-    "dependencies": {
-        "firebase": "^11.1.0"
     }
 }

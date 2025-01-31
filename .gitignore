@@ -44,6 +44,3 @@ Thumbs.db
 
 # Yarn Integrity file
 .yarn-integrity
-
-# Firebase config
-src/firebase-config.js 

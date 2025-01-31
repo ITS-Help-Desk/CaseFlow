@@ -1,5 +1,9 @@
 class Sidebar {
     constructor() {
+        this.statusDot = null;
+        this.statusText = null;
+        
+        // Wait for DOM to be ready
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => this.init());
         } else {
@@ -8,8 +12,67 @@ class Sidebar {
     }
 
     init() {
+        console.log('Sidebar init started');
         this.initializeEventListeners();
         this.initializeDragAndDrop();
+        this.initializeStatusIndicator();
+    }
+
+    initializeStatusIndicator() {
+        console.log('Initializing status indicator');
+        this.statusDot = document.querySelector('.status-dot');
+        this.statusText = document.querySelector('.status-text');
+        
+        if (!this.statusDot || !this.statusText) {
+            console.error('Status elements not found');
+            return;
+        }
+
+        // Set initial connecting state
+        this.updateDatabaseStatus('connecting');
+        
+        if (window.electron) {
+            console.log('Setting up electron listeners');
+            
+            // Listen for status updates
+            window.electron.onDatabaseStatus((status) => {
+                console.log('Received database status:', status);
+                this.updateDatabaseStatus(status);
+            });
+
+            // Request initial status
+            window.electron.getDatabaseStatus()
+                .then(status => {
+                    console.log('Got initial database status:', status);
+                    this.updateDatabaseStatus(status);
+                })
+                .catch(err => {
+                    console.error('Failed to get database status:', err);
+                    this.updateDatabaseStatus(false);
+                });
+        }
+    }
+
+    updateDatabaseStatus(status) {
+        if (!this.statusDot || !this.statusText) {
+            console.error('Status elements not found in updateDatabaseStatus');
+            return;
+        }
+
+        console.log('Updating status to:', status);
+        this.statusDot.classList.remove('connected', 'error');
+        
+        if (status === true) {
+            this.statusDot.classList.add('connected');
+            this.statusText.textContent = 'database connected';
+        } else if (status === false) {
+            this.statusDot.classList.add('error');
+            this.statusText.textContent = 'Database Error';
+        } else if (status === 'connecting') {
+            this.statusText.textContent = 'Connecting...';
+        } else {
+            this.statusText.textContent = 'Database Status';
+        }
     }
 
     initializeEventListeners() {

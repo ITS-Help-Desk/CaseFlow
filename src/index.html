@@ -183,13 +183,26 @@
     </div>
 
     <!-- Claim modal -->
-    <div id="claimModal" class="modal" style="display: none;">
+    <div id="claimModal" class="modal">
         <div class="modal-content">
-            <h2>Claim Case</h2>
-            <input type="text" id="caseNumberInput" placeholder="Enter case number">
-            <div class="modal-buttons">
-                <button class="btn btn-unclaim" onclick="claimCase.closeModal()">Cancel</button>
-                <button class="btn btn-claim" onclick="claimCase.submitClaim()">Claim</button>
+            <div class="modal-header">
+                <h2>Claim Case</h2>
+                <button class="close-button">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="input-group">
+                    <label>CASE NUMBER</label>
+                    <input 
+                        type="text" 
+                        id="caseNumberInput" 
+                        placeholder="Enter case number"
+                        autocomplete="off"
+                    />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-cancel">Cancel</button>
+                <button class="btn btn-submit">Claim</button>
             </div>
         </div>
     </div>
@@ -275,10 +288,9 @@
             }
         });
     </script>
-    <script type="module" src="./firebase-config.js"></script>
     <script type="module">
         import Sidebar from './components/left-sidebar.js';
-        import ClaimCase from './components/claim-case.js';
+        import ClaimCase from './components/cases/claim-case.js';
         import CompletedCases from './components/completed-cases.js';
         import Announcements from './components/announcements.js';
         import Resources from './components/resources.js';
