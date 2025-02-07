@@ -7,12 +7,22 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    transition: background-color 0.2s ease;
+    transition: all 0.2s ease-out;
     gap: 16px;
+    will-change: transform, opacity;
+    transform: translateZ(0);
+    flex-shrink: 0;
+    min-height: fit-content;
+    opacity: 1;
 }
 
 .case-card:hover {
     background-color: #252525;
+}
+
+.case-card.fade-out {
+    opacity: 0;
+    transform: translateY(-10px);
 }
 
 .case-info {
@@ -284,4 +294,72 @@
 
 .error-message:not(:empty) {
     display: block;
+}
+
+#claimView {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    padding-top: 20px;
+}
+
+#claimView h2 {
+    color: #ffffff;
+    margin: 0 0 20px 0;
+}
+
+#casesContainer {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;       
+    max-height: calc(100vh - var(--header-height, 140px));
+    height: auto;
+    scroll-behavior: smooth;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+    position: relative;
+}
+
+/* Update scrollbar styles to match the container ID */
+#casesContainer::-webkit-scrollbar {
+    width: 8px;
+    background-color: transparent;
+}
+
+#casesContainer::-webkit-scrollbar-track {
+    background: #1e1e1e;
+    border-radius: 4px;
+    margin: 4px 0;
+}
+
+#casesContainer::-webkit-scrollbar-thumb {
+    background: #4f545c;
+    border-radius: 4px;
+    min-height: 40px;
+}
+
+#casesContainer::-webkit-scrollbar-thumb:hover {
+    background: #3d4045;
+}
+
+/* Update responsive adjustments to use CSS variables */
+:root {
+    --header-height: 140px;
+}
+
+@media (max-height: 768px) {
+    :root {
+        --header-height: 120px;
+    }
+}
+
+@media (max-height: 576px) {
+    :root {
+        --header-height: 100px;
+    }
 } 
