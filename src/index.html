@@ -5,7 +5,11 @@
     
     <!-- Core styles -->
     <style>
-        /* Base styles */
+        /*
+         * Base styles for the application
+         * These styles establish the core layout and basic structure
+         * Variables and global styles should be defined here
+         */
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
             margin: 0;
@@ -17,23 +21,47 @@
             overflow: hidden;
         }
 
+        /* Main content wrapper - contains all views except sidebars */
         .main-content {
             flex: 1;
             padding: 20px;
             min-width: 0;
             transition: margin-left 0.3s ease;
-            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
             height: 100vh;
+            box-sizing: border-box;
         }
 
+        /* Ensures all direct children of main-content take full height */
+        .main-content > div {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        /* Global heading styles */
+        .main-content h1 {
+            margin-top: 0;
+            margin-bottom: 24px;
+            flex-shrink: 0;
+        }
+
+        /* Claim section container styles */
         #claimSection {
             margin-bottom: 20px;
+            flex-shrink: 0;
         }
 
+        /* Container for case cards with scrolling */
         #casesContainer {
             display: flex;
             flex-direction: column;
             gap: 15px;
+            overflow-y: auto;
+            flex: 1;
+            min-height: 0;
         }
     </style>
     <link rel="stylesheet" href="styles/left-sidebar.css">
@@ -49,9 +77,15 @@
     <link rel="stylesheet" href="styles/parent-case.css">
 </head>
 
-<!-- Main body structure -->
+<!-- 
+    Main body structure
+    The application uses a three-column layout:
+    1. Left sidebar: Navigation and main actions
+    2. Main content: Dynamic views based on navigation
+    3. Right sidebar: Parent cases and additional context
+-->
 <body>
-    <!-- Left sidebar -->
+    <!-- Left sidebar: Main navigation -->
     <div class="sidebar">
         <div class="sidebar-item" data-view="home">
             <svg class="channel-icon" width="20" height="20" viewBox="0 0 24 24">
@@ -59,48 +93,52 @@
             </svg>
             <span>home</span>
         </div>
-        <div class="sidebar-item active" data-view="claim">
-            <svg class="channel-icon" width="20" height="20" viewBox="0 0 24 24">
-                <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/>
-            </svg>
-            <span>claim-case</span>
-        </div>
-        <div class="sidebar-item" data-view="completed">
-            <svg class="channel-icon" width="20" height="20" viewBox="0 0 24 24">
-                <path fill="currentColor" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
-            </svg>
-            <span>completed-cases</span>
-        </div>
+        
         <div class="sidebar-item" data-view="announcements">
             <svg class="channel-icon" width="20" height="20" viewBox="0 0 24 24">
                 <path fill="currentColor" d="M18 11v2h4v-2h-4zm-2 6.61c.96.71 2.21 1.65 3.2 2.39.4-.53.8-1.07 1.2-1.6-.99-.74-2.24-1.68-3.2-2.4-.4.54-.8 1.08-1.2 1.61zM20.4 5.6c-.4-.53-.8-1.07-1.2-1.6-.99.74-2.24 1.68-3.2 2.4.4.53.8 1.07 1.2 1.6.96-.71 2.21-1.65 3.2-2.4zM4 9c-1.1 0-2 .9-2 2v2c0 1.1.9 2 2 2h1v4h2v-4h1l5 3V6L8 9H4zm11.5 3c0-1.33-.58-2.53-1.5-3.35v6.69c.92-.81 1.5-2.01 1.5-3.34z"/>
             </svg>
             <span>announcements</span>
         </div>
-        <div class="sidebar-item" data-view="resources">
-            <svg class="channel-icon" width="20" height="20" viewBox="0 0 24 24">
-                <path fill="currentColor" d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9H9V9h10v2zm-4 4H9v-2h6v2zm4-8H9V5h10v2z"/>
-            </svg>
-            <span>resources</span>
-        </div>
-        <div class="sidebar-item" data-view="logs">
-            <svg class="channel-icon" width="20" height="20" viewBox="0 0 24 24">
-                <path fill="currentColor" d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/>
-            </svg>
-            <span>logs-chat</span>
-        </div>
+
         <div class="sidebar-item" data-view="pings">
             <svg class="channel-icon" width="20" height="20" viewBox="0 0 24 24">
                 <path fill="currentColor" d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z"/>
             </svg>
             <span>pings</span>
         </div>
+
+        <div class="sidebar-item active" data-view="claim">
+            <svg class="channel-icon" width="20" height="20" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/>
+            </svg>
+            <span>claim-case</span>
+        </div>
+
+        <div class="sidebar-item" data-view="completed">
+            <svg class="channel-icon" width="20" height="20" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+            </svg>
+            <span>completed-cases</span>
+        </div>
+
+        <div class="sidebar-item" data-view="logs">
+            <svg class="channel-icon" width="20" height="20" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/>
+            </svg>
+            <span>logs-chat</span>
+        </div>
+
+        <div class="sidebar-item" data-view="resources">
+            <svg class="channel-icon" width="20" height="20" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9H9V9h10v2zm-4 4H9v-2h6v2zm4-8H9V5h10v2z"/>
+            </svg>
+            <span>resources</span>
+        </div>
     </div>
 
-    <!-- Main content area -->
+    <!-- Main content area: Contains all the different views -->
     <div class="main-content">
-        <h1>Cases</h1>
-        
         <!-- Home view -->
         <div id="homeView" style="display: none;">
             <h2>Welcome to CaseFlow</h2>
@@ -128,10 +166,10 @@
 
         <!-- Claim view -->
         <div id="claimView">
+            <h2>Cases</h2>
             <div id="claimSection">
                 <button class="btn btn-claim" onclick="claimCase.promptForClaim()">Claim New Case</button>
             </div>
-
             <div id="casesContainer">
                 <!-- Claimed cases will be displayed here -->
             </div>
@@ -139,7 +177,9 @@
 
         <!-- Completed view -->
         <div id="completedView" style="display: none;">
-            <h2>Completed Cases</h2>
+            <div id="completedSection">
+                <h2>Completed Cases</h2>
+            </div>
             <div id="completedContainer">
                 <!-- Completed cases will be displayed here -->
             </div>
@@ -182,6 +222,14 @@
         </div>
     </div>
 
+    <!-- 
+        Modals
+        The application uses several modals for different actions:
+        1. Claim Modal: For claiming new cases
+        2. Parent Case Modal: For adding/editing parent cases
+        3. Delete Confirmation Modal: For confirming deletions
+    -->
+    
     <!-- Claim modal -->
     <div id="claimModal" class="modal">
         <div class="modal-content">
@@ -279,16 +327,23 @@
         </div>
     </div>
 
-    <!-- JavaScript functionality -->
+    <!-- JavaScript Initialization -->
     <script>
-        // Event listeners
+        // Event listeners for enhanced UX
         document.getElementById('parentCaseNumberInput')?.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 document.getElementById('descriptionInput').focus();
             }
         });
     </script>
+
+    <!-- 
+        Module imports and component initialization
+        Each component is responsible for its own view and functionality
+        Components are made globally accessible for cross-component communication
+    -->
     <script type="module">
+        // Import all components
         import Sidebar from './components/left-sidebar.js';
         import ClaimCase from './components/cases/claim-case.js';
         import CompletedCases from './components/completed-cases.js';
@@ -300,7 +355,7 @@
         import RightSidebar from './components/right-sidebar.js';
         import ParentCase from './components/parent-case.js';
 
-        // Initialize components
+        // Initialize all components
         const home = new Home();
         const claimCase = new ClaimCase();
         const completedCases = new CompletedCases();
@@ -311,7 +366,7 @@
         const rightSidebar = new RightSidebar();
         const parentCase = new ParentCase();
 
-        // Make necessary instances globally accessible
+        // Make components globally accessible for cross-component communication
         window.home = home;
         window.claimCase = claimCase;
         window.completedCases = completedCases;

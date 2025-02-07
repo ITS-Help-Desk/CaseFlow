@@ -152,10 +152,40 @@ export default class ClaimCase {
     }
 
     completeCase(card) {
-        if (card) card.remove();
+        if (card) {
+            const caseNumber = card.querySelector('.case-number').textContent;
+            const userTag = card.querySelector('.user-tag');
+            const userName = userTag ? userTag.textContent.replace('@', '') : 'Unknown User';
+            
+            // Add fade-out animation
+            card.classList.add('fade-out');
+            
+            // Wait for animation to complete before removing and dispatching event
+            setTimeout(() => {
+                // Dispatch custom event for completed cases
+                const completedEvent = new CustomEvent('case-completed', {
+                    detail: {
+                        caseNumber,
+                        userName,
+                        timestamp: new Date()
+                    }
+                });
+                document.dispatchEvent(completedEvent);
+                
+                card.remove();
+            }, 200); // Match the CSS transition duration
+        }
     }
 
     unclaimCase(card) {
-        if (card) card.remove();
+        if (card) {
+            // Add fade-out animation
+            card.classList.add('fade-out');
+            
+            // Wait for animation to complete before removing
+            setTimeout(() => {
+                card.remove();
+            }, 200); // Match the CSS transition duration
+        }
     }
 } 

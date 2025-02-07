@@ -1,8 +1,249 @@
+/*
+ * Completed Cases View Styles
+ * 
+ * Styles for the completed cases section, including:
+ * - Case card layout and animations
+ * - Comment section styling
+ * - Responsive design adjustments
+ * - QA functionality visual elements
+ */
+
+/* Main container for completed cases view */
+#completedView {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 20px;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+/* Header section styling */
+#claimView h2 {
+    margin: 0 0 20px 0;
+    font-size: 28px;
+    font-weight: 600;
+    color: #e9eaeb;
+}
+
+/* Container for completed case cards */
+#completedSection {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* Individual case card styling */
+.completed-case {
+    background-color: #2b2d31;
+    border-radius: 8px;
+    padding: 16px;
+    transition: all 0.2s ease;
+    border: 1px solid #383a40;
+}
+
+.completed-case:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Case header information */
+.case-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+}
+
+.case-info {
+    flex: 1;
+}
+
+.case-title {
+    font-size: 1.1em;
+    font-weight: 600;
+    color: #e9eaeb;
+    margin-bottom: 4px;
+}
+
+.case-meta {
+    font-size: 0.9em;
+    color: #b9bbbe;
+}
+
+/* QA status indicators */
+.qa-status {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.85em;
+    font-weight: 500;
+}
+
+.qa-status.pending {
+    background-color: #4361ee20;
+    color: #4361ee;
+}
+
+.qa-status.approved {
+    background-color: #2d7d4620;
+    color: #2d7d46;
+}
+
+.qa-status.rejected {
+    background-color: #d83c3e20;
+    color: #d83c3e;
+}
+
+/* Comment section styling */
+.comment-section {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #383a40;
+    display: none;
+}
+
+.comment-section.visible {
+    display: block;
+    animation: slideDown 0.2s ease;
+}
+
+/* Comment input area */
+.comment-input {
+    background-color: #1e1f22;
+    border: 1px solid #383a40;
+    border-radius: 4px;
+    padding: 8px 12px;
+    color: #dcddde;
+    width: 100%;
+    margin-bottom: 8px;
+    resize: vertical;
+    min-height: 60px;
+}
+
+.comment-input:focus {
+    outline: none;
+    border-color: #4361ee;
+}
+
+/* Action buttons */
+.action-buttons {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.action-button {
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.approve-button {
+    background-color: #2d7d4620;
+    color: #2d7d46;
+}
+
+.approve-button:hover {
+    background-color: #2d7d4640;
+}
+
+.reject-button {
+    background-color: #d83c3e20;
+    color: #d83c3e;
+}
+
+.reject-button:hover {
+    background-color: #d83c3e40;
+}
+
+/* Animations */
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Scrollbar styling */
+#completedSection::-webkit-scrollbar {
+    width: 8px;
+}
+
+#completedSection::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+#completedSection::-webkit-scrollbar-thumb {
+    background-color: #202225;
+    border-radius: 4px;
+}
+
+#completedSection::-webkit-scrollbar-thumb:hover {
+    background-color: #2f3136;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    #completedView {
+        padding: 16px;
+    }
+    
+    .case-header {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .qa-status {
+        align-self: flex-start;
+    }
+}
+
+/* Completed view container */
+#completedView {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    padding-top: 20px;
+}
+
+#completedSection {
+    margin-bottom: 20px;
+}
+
+#completedSection h2 {
+    color: #ffffff;
+    margin: 0;
+}
+
 /* Completed cases container */
 #completedContainer {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 8px;
     display: flex;
     flex-direction: column;
     gap: 15px;
+    max-height: calc(100vh - var(--header-height, 140px));
+    height: auto;
+    overscroll-behavior-y: contain;
+    position: relative;
+    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
+    content-visibility: auto;
+    contain: content;
+    scroll-behavior: smooth;
 }
 
 /* Completed list item styles */
@@ -21,7 +262,7 @@
 
 .completed-case-number {
     font-family: monospace;
-    font-size: 1.1em;
+    font-size: 0.9em;
     margin-right: 12px;
     color: #dcddde;
 }
@@ -32,17 +273,276 @@
     margin-left: auto;
 }
 
-/* Completed view container */
-#completedView {
+/* Completed case card styles */
+#completedContainer .case-card {
+    background-color: #1e1e1e;
+    border-radius: 4px;
+    padding: 12px 16px;
+    margin-bottom: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    transition: all 0.2s ease-out;
+    gap: 16px;
+    position: relative;
+    width: 100%;
+    box-sizing: border-box;
+    flex-shrink: 0;
+    min-height: fit-content;
+    overflow: visible;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    opacity: 1;
+    will-change: transform, opacity;
+}
+
+#completedContainer .case-card:hover {
+    background-color: #252525;
+}
+
+#completedContainer .case-card.with-comment {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    margin-bottom: 0;
+    border-bottom: none;
+}
+
+#completedContainer .case-card.fade-out {
+    opacity: 0;
+    transform: translateY(-10px);
+}
+
+#completedContainer .case-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+}
+
+#completedContainer .case-header {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+#completedContainer .case-number {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 0.9em;
+    color: #ffffff;
+    font-weight: 500;
+}
+
+#completedContainer .status-text {
+    color: #dcddde;
+    font-size: 0.95em;
+}
+
+#completedContainer .case-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+    color: #72767d;
+    font-size: 0.85em;
+}
+
+#completedContainer .case-meta .completed-time {
+    font-size: 0.84em;  /* This will be 90% of the parent 0.85em */
+    color: #72767d;
+}
+
+#completedContainer .completed-label {
+    color: #2d7d46;
+}
+
+#completedContainer .completed-dot {
+    margin: 0 6px;
+}
+
+#completedContainer .user-tag {
+    background-color: #4361ee;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.9em;
+    font-weight: 500;
+    color: white;
+    display: inline-flex;
+    align-items: center;
+}
+
+/* Add these new styles */
+#completedContainer .card-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: absolute;
+    right: 16px;
+    top: 16px;
+    transform: none;
+    overflow: hidden;
+}
+
+#completedContainer .btn-approve,
+#completedContainer .btn-qa,
+#completedContainer .btn-neutral,
+#completedContainer .btn-reject {
+    width: 32px;
+    min-width: 32px;
+    max-width: 32px;
+    height: 32px;
+    min-height: 32px;
+    max-height: 32px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 32px;
+}
+
+#completedContainer .btn-qa,
+#completedContainer .btn-submit,
+#completedContainer .btn-cancel,
+#completedContainer .btn-approve,
+#completedContainer .btn-neutral,
+#completedContainer .btn-reject {
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    transition: background-color 0.2s ease-in-out;
+}
+
+#completedContainer .btn-qa.btn-submit {
+    background-color: #2d7d46;
+    width: auto;
+    min-width: 80px;
+    max-width: none;
+    padding: 0 16px;
+    transition: none;
+}
+
+#completedContainer .btn-cancel {
+    background-color: #4f545c;
+    width: auto;
+    min-width: 80px;
+    max-width: none;
+    padding: 0 16px;
+}
+
+#completedContainer .card-actions .btn-approve {
+    background-color: #2d7d46;
+}
+
+#completedContainer .card-actions .btn-qa {
+    background-color: #4361ee;
+}
+
+#completedContainer .card-actions .btn-neutral {
+    background-color: #4f545c;
+}
+
+#completedContainer .card-actions .btn-reject {
+    background-color: #d83c3e;
+}
+
+#completedContainer .card-actions .btn-approve:hover {
+    background-color: #215b33;
+}
+
+#completedContainer .card-actions .btn-qa:hover {
+    background-color: #3451d1;
+}
+
+#completedContainer .card-actions .btn-neutral:hover {
+    background-color: #3d4045;
+}
+
+#completedContainer .card-actions .btn-reject:hover {
+    background-color: #b22d2f;
+}
+
+#completedContainer .btn-approve.hidden,
+#completedContainer .btn-neutral.hidden,
+#completedContainer .btn-reject.hidden {
+    opacity: 0;
+    transform: scale(0.8);
+    pointer-events: none;
     display: none;
 }
 
-#completedView h2 {
-    color: #ffffff;
-    margin-bottom: 20px;
+/* Comment section styles */
+#completedContainer .comment-section {
+    background-color: #181818;
+    animation: slideDown 0.2s ease-in-out;
+    border-bottom-left-radius: 4px;
+    border-bottom-right-radius: 4px;
+    box-shadow: 0 0 0 rgba(0, 0, 0, 0.3);
+    padding: 16px;
+    padding-bottom: 10px;
+    width: calc(100%);
+    margin-left: -16px;
+    margin-top: 0;
+    margin-bottom: -16px;
+    position: relative;
+    border-top: none;
 }
 
-/* Completed case card styles */
-#completedContainer .case-card {
-    opacity: 0.8;
+#completedContainer .comment-input {
+    width: 100%;
+    background-color: #141414;
+    border: 1px solid #2d2d2d;
+    border-radius: 4px;
+    padding: 6px 12px;
+    color: #dcddde;
+    font-size: 0.9em;
+    resize: none;
+    height: 32px;
+    min-height: 32px;
+    line-height: 20px;
+    font-family: inherit;
+    box-sizing: border-box;
+    display: block;
+    overflow: hidden;
+}
+
+/* Enhanced scrollbar styles */
+#completedContainer::-webkit-scrollbar {
+    width: 8px;
+    background-color: transparent;
+}
+
+#completedContainer::-webkit-scrollbar-track {
+    background: #1e1e1e;
+    border-radius: 4px;
+    margin: 4px 0;
+}
+
+#completedContainer::-webkit-scrollbar-thumb {
+    background: #4f545c;
+    border-radius: 4px;
+    min-height: 40px;
+}
+
+#completedContainer::-webkit-scrollbar-thumb:hover {
+    background: #3d4045;
+}
+
+/* Update responsive adjustments to use CSS variables */
+:root {
+    --header-height: 140px;
+}
+
+@media (max-height: 768px) {
+    :root {
+        --header-height: 120px;
+    }
+}
+
+@media (max-height: 576px) {
+    :root {
+        --header-height: 100px;
+    }
 } 
