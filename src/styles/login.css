@@ -1,0 +1,241 @@
+.login-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100vh;
+    background-color: #1a1a1a;
+    position: relative;
+    overflow: hidden;
+    padding: 24px 32px;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+.login-container::before {
+    content: '';
+    position: absolute;
+    width: 150%;
+    height: 150%;
+    background: radial-gradient(circle at center, #2a2a2a 0%, #1e1e1e 70%);
+    animation: pulse 15s infinite;
+    z-index: 0;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); opacity: 0.5; }
+    50% { transform: scale(1.2); opacity: 0.7; }
+    100% { transform: scale(1); opacity: 0.5; }
+}
+
+.login-form-container {
+    width: 100%;
+    max-width: 600px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    z-index: 1;
+}
+
+.login-form {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    position: relative;
+}
+
+.login-logo {
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+.login-logo h1 {
+    color: #ffffff;
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+/* Form toggle styles */
+.form-toggle {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    margin: 0 24px 48px 24px;
+    background-color: rgba(0, 0, 0, 0.1);
+    padding: 4px;
+    border-radius: 12px;
+    width: calc(100% - 48px);
+    max-width: 600px;
+}
+
+.toggle-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 32px;
+    color: #b0b0b0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    position: relative;
+    user-select: none;
+    background: none;
+    border: none;
+    font-size: 14px;
+    text-align: center;
+    height: 40px;
+    margin: 0 4px;
+}
+
+.toggle-btn:hover {
+    background-color: #252525;
+    color: #ffffff;
+}
+
+.toggle-btn.active {
+    color: #ffffff;
+    background-color: #2d2d2d;
+}
+
+.login-error {
+    background-color: rgba(237, 66, 69, 0.1);
+    color: #ed4245;
+    padding: 6px;
+    border-radius: 4px;
+    font-size: 12px;
+    text-align: center;
+    border: 1px solid rgba(237, 66, 69, 0.2);
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.input-label {
+    color: #72767d;
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.login-input {
+    padding: 8px 16px;
+    background-color: #252525;
+    border: 1px solid #2d2d2d;
+    border-radius: 4px;
+    font-size: 14px;
+    width: 100%;
+    height: 40px;
+    color: #ffffff;
+    box-sizing: border-box;
+    font-family: inherit;
+}
+
+.login-input::placeholder {
+    color: #72767d;
+    font-size: 13px;
+    font-family: inherit;
+}
+
+.login-input:hover {
+    border-color: #3d3d3d;
+    background-color: #2a2a2a;
+}
+
+.login-input:focus {
+    outline: none;
+    border-color: #3d3d3d;
+    background-color: #2a2a2a;
+}
+
+.signup-field {
+    opacity: 0;
+    height: 0;
+    margin: 0;
+    padding: 0;
+    transition: all 0.2s ease-in-out;
+}
+
+.signup-field[style*="block"] {
+    opacity: 1;
+    height: auto;
+    margin: 0;
+}
+
+.login-button-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 16px;
+}
+
+.login-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    background-color: #252525;
+    color: #ffffff;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    width: 100%;
+    height: 40px;
+    margin: 24px 0;
+    max-width: 520px;
+}
+
+.login-button::after {
+    content: '→';
+    font-size: 16px;
+    margin-left: 4px;
+}
+
+.login-button:disabled {
+    background-color: #1a1a1a;
+    color: #72767d;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.login-button:hover {
+    background-color: #2d2d2d;
+    transform: translateY(-1px);
+}
+
+.register-prompt {
+    text-align: left;
+    margin-top: 16px;
+    color: #72767d;
+    font-size: 13px;
+}
+
+.register-prompt a {
+    color: #b0b0b0;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s ease-in-out;
+}
+
+.register-prompt a:hover {
+    color: #ffffff;
+}
+
+/* Right side content area - can be used for background image or content */
+.login-content {
+    background-color: #1a1a1a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+} 

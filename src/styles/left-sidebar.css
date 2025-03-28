@@ -122,7 +122,7 @@
 /* Status indicator styles */
 .status-indicator {
     position: fixed;
-    bottom: 0;
+    bottom: 60px;
     left: 0;
     width: 60px;
     padding: 8px 12px;
@@ -177,6 +177,26 @@
     width: 240px;
 }
 
-.sidebar:hover .status-dot {
-    /* Remove this rule entirely as we don't want the dot to move */
+/* Logout button styles */
+.logout-button {
+    position: fixed !important;
+    bottom: 0;
+    left: 0;
+    width: 36px !important; /* Smaller width when collapsed */
+    height: 36px !important; /* Make it square when collapsed */
+    margin: 8px !important;
+    padding: 8px !important;
+    background-color: #1a1a1a;
+    z-index: 102;
+    transition: all 0.2s ease-in-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+}
+
+.sidebar:hover .logout-button {
+    width: calc(200px) !important; /* 240px expanded width - 16px total margin */
+    height: auto !important;
+    padding: 8px 12px !important;
 } 

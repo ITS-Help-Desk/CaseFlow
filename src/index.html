@@ -75,6 +75,7 @@
     <link rel="stylesheet" href="styles/home.css">
     <link rel="stylesheet" href="styles/pings.css">
     <link rel="stylesheet" href="styles/parent-case.css">
+    <link rel="stylesheet" href="styles/login.css">
 </head>
 
 <!-- 
@@ -85,243 +86,257 @@
     3. Right sidebar: Parent cases and additional context
 -->
 <body>
-    <!-- Left sidebar: Main navigation -->
-    <div class="sidebar">
-        <div class="sidebar-item" data-view="home">
-            <svg class="channel-icon" width="20" height="20" viewBox="0 0 24 24">
-                <path fill="currentColor" d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
-            </svg>
-            <span>home</span>
+    <!-- Login container -->
+    <div id="loginContainer"></div>
+
+    <!-- Main container - will be hidden initially -->
+    <div id="main-container" style="display: none; width: 100%;">
+        <!-- Left sidebar: Main navigation -->
+        <div class="sidebar">
+            <div class="sidebar-item" data-view="home">
+                <svg class="channel-icon" width="20" height="20" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+                </svg>
+                <span>home</span>
+            </div>
+            
+            <div class="sidebar-item" data-view="announcements">
+                <svg class="channel-icon" width="20" height="20" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M18 11v2h4v-2h-4zm-2 6.61c.96.71 2.21 1.65 3.2 2.39.4-.53.8-1.07 1.2-1.6-.99-.74-2.24-1.68-3.2-2.4-.4.54-.8 1.08-1.2 1.61zM20.4 5.6c-.4-.53-.8-1.07-1.2-1.6-.99.74-2.24 1.68-3.2 2.4.4.53.8 1.07 1.2 1.6.96-.71 2.21-1.65 3.2-2.4zM4 9c-1.1 0-2 .9-2 2v2c0 1.1.9 2 2 2h1v4h2v-4h1l5 3V6L8 9H4zm11.5 3c0-1.33-.58-2.53-1.5-3.35v6.69c.92-.81 1.5-2.01 1.5-3.34z"/>
+                </svg>
+                <span>announcements</span>
+            </div>
+
+            <div class="sidebar-item" data-view="pings">
+                <svg class="channel-icon" width="20" height="20" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z"/>
+                </svg>
+                <span>pings</span>
+            </div>
+
+            <div class="sidebar-item active" data-view="claim">
+                <svg class="channel-icon" width="20" height="20" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/>
+                </svg>
+                <span>claim-case</span>
+            </div>
+
+            <div class="sidebar-item" data-view="completed">
+                <svg class="channel-icon" width="20" height="20" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+                </svg>
+                <span>completed-cases</span>
+            </div>
+
+            <div class="sidebar-item" data-view="logs">
+                <svg class="channel-icon" width="20" height="20" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/>
+                </svg>
+                <span>logs-chat</span>
+            </div>
+
+            <div class="sidebar-item" data-view="resources">
+                <svg class="channel-icon" width="20" height="20" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9H9V9h10v2zm-4 4H9v-2h6v2zm4-8H9V5h10v2z"/>
+                </svg>
+                <span>resources</span>
+            </div>
+
+            <!-- Add logout button at the bottom -->
+            <div class="sidebar-item logout-button" style="margin-top: auto;" id="logoutButton">
+                <svg class="channel-icon" width="20" height="20" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/>
+                </svg>
+                <span>logout</span>
+            </div>
         </div>
+
+        <!-- Main content area: Contains all the different views -->
+        <div class="main-content">
+            <!-- Home view -->
+            <div id="homeView" style="display: none;">
+                <h2>Welcome to CaseFlow</h2>
+                <div id="homeContainer">
+                    <div class="dashboard-stats">
+                        <div class="stat-card">
+                            <h3>Active Cases</h3>
+                            <span class="stat-number">0</span>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Completed Today</h3>
+                            <span class="stat-number">0</span>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Total Cases</h3>
+                            <span class="stat-number">0</span>
+                        </div>
+                    </div>
+                    <div class="recent-activity">
+                        <h3>Recent Activity</h3>
+                        <div class="activity-list"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Claim view -->
+            <div id="claimView">
+                <h2>Cases</h2>
+                <div id="claimSection">
+                    <button class="btn btn-claim" onclick="claimCase.promptForClaim()">Claim New Case</button>
+                </div>
+                <div id="casesContainer">
+                    <!-- Claimed cases will be displayed here -->
+                </div>
+            </div>
+
+            <!-- Completed view -->
+            <div id="completedView" style="display: none;">
+                <div id="completedSection">
+                    <h2>Completed Cases</h2>
+                </div>
+                <div id="completedContainer">
+                    <!-- Completed cases will be displayed here -->
+                </div>
+            </div>
+
+            <!-- Announcements view -->
+            <div id="announcementsView" style="display: none;">
+                <h2>Announcements</h2>
+                <div id="announcementsContainer">
+                    <!-- Announcements will be displayed here -->
+                </div>
+            </div>
+
+            <!-- Resources view -->
+            <div id="resourcesView" style="display: none;">
+                <h2>Resources</h2>
+                <div id="resourcesContainer">
+                    <!-- Resources will be displayed here -->
+                </div>
+            </div>
+
+            <!-- Logs view -->
+            <div id="logsView" style="display: none;">
+                <h2>Logs Chat</h2>
+                <div id="logsContainer">
+                    <div class="logs-messages"></div>
+                    <div class="logs-input-container">
+                        <input type="text" id="logsInput" placeholder="Type your message...">
+                        <button class="btn btn-send">Send</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pings view -->
+            <div id="pingsView" style="display: none;">
+                <h2>Notifications</h2>
+                <div id="pingsContainer">
+                    <div class="pings-list"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 
+            Modals
+            The application uses several modals for different actions:
+            1. Claim Modal: For claiming new cases
+            2. Parent Case Modal: For adding/editing parent cases
+            3. Delete Confirmation Modal: For confirming deletions
+        -->
         
-        <div class="sidebar-item" data-view="announcements">
-            <svg class="channel-icon" width="20" height="20" viewBox="0 0 24 24">
-                <path fill="currentColor" d="M18 11v2h4v-2h-4zm-2 6.61c.96.71 2.21 1.65 3.2 2.39.4-.53.8-1.07 1.2-1.6-.99-.74-2.24-1.68-3.2-2.4-.4.54-.8 1.08-1.2 1.61zM20.4 5.6c-.4-.53-.8-1.07-1.2-1.6-.99.74-2.24 1.68-3.2 2.4.4.53.8 1.07 1.2 1.6.96-.71 2.21-1.65 3.2-2.4zM4 9c-1.1 0-2 .9-2 2v2c0 1.1.9 2 2 2h1v4h2v-4h1l5 3V6L8 9H4zm11.5 3c0-1.33-.58-2.53-1.5-3.35v6.69c.92-.81 1.5-2.01 1.5-3.34z"/>
-            </svg>
-            <span>announcements</span>
-        </div>
-
-        <div class="sidebar-item" data-view="pings">
-            <svg class="channel-icon" width="20" height="20" viewBox="0 0 24 24">
-                <path fill="currentColor" d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z"/>
-            </svg>
-            <span>pings</span>
-        </div>
-
-        <div class="sidebar-item active" data-view="claim">
-            <svg class="channel-icon" width="20" height="20" viewBox="0 0 24 24">
-                <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/>
-            </svg>
-            <span>claim-case</span>
-        </div>
-
-        <div class="sidebar-item" data-view="completed">
-            <svg class="channel-icon" width="20" height="20" viewBox="0 0 24 24">
-                <path fill="currentColor" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
-            </svg>
-            <span>completed-cases</span>
-        </div>
-
-        <div class="sidebar-item" data-view="logs">
-            <svg class="channel-icon" width="20" height="20" viewBox="0 0 24 24">
-                <path fill="currentColor" d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/>
-            </svg>
-            <span>logs-chat</span>
-        </div>
-
-        <div class="sidebar-item" data-view="resources">
-            <svg class="channel-icon" width="20" height="20" viewBox="0 0 24 24">
-                <path fill="currentColor" d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9H9V9h10v2zm-4 4H9v-2h6v2zm4-8H9V5h10v2z"/>
-            </svg>
-            <span>resources</span>
-        </div>
-    </div>
-
-    <!-- Main content area: Contains all the different views -->
-    <div class="main-content">
-        <!-- Home view -->
-        <div id="homeView" style="display: none;">
-            <h2>Welcome to CaseFlow</h2>
-            <div id="homeContainer">
-                <div class="dashboard-stats">
-                    <div class="stat-card">
-                        <h3>Active Cases</h3>
-                        <span class="stat-number">0</span>
-                    </div>
-                    <div class="stat-card">
-                        <h3>Completed Today</h3>
-                        <span class="stat-number">0</span>
-                    </div>
-                    <div class="stat-card">
-                        <h3>Total Cases</h3>
-                        <span class="stat-number">0</span>
+        <!-- Claim modal -->
+        <div id="claimModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Claim Case</h2>
+                    <button class="close-button">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="input-group">
+                        <label>CASE NUMBER</label>
+                        <input 
+                            type="text" 
+                            id="caseNumberInput" 
+                            placeholder="Enter case number"
+                            autocomplete="off"
+                        />
                     </div>
                 </div>
-                <div class="recent-activity">
-                    <h3>Recent Activity</h3>
-                    <div class="activity-list"></div>
+                <div class="modal-footer">
+                    <button class="btn btn-cancel">Cancel</button>
+                    <button class="btn btn-submit">Claim</button>
                 </div>
             </div>
         </div>
 
-        <!-- Claim view -->
-        <div id="claimView">
-            <h2>Cases</h2>
-            <div id="claimSection">
-                <button class="btn btn-claim" onclick="claimCase.promptForClaim()">Claim New Case</button>
+        <!-- Right sidebar -->
+        <div class="right-sidebar">
+            <div class="right-sidebar-header">
+                <div class="header-with-button">
+                    <h3>Active Parent Cases</h3>
+                    <button class="add-parent-case-btn">
+                        <svg width="16" height="16" viewBox="0 0 24 24">
+                            <path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                        </svg>
+                    </button>
+                </div>
             </div>
-            <div id="casesContainer">
-                <!-- Claimed cases will be displayed here -->
-            </div>
-        </div>
-
-        <!-- Completed view -->
-        <div id="completedView" style="display: none;">
-            <div id="completedSection">
-                <h2>Completed Cases</h2>
-            </div>
-            <div id="completedContainer">
-                <!-- Completed cases will be displayed here -->
-            </div>
-        </div>
-
-        <!-- Announcements view -->
-        <div id="announcementsView" style="display: none;">
-            <h2>Announcements</h2>
-            <div id="announcementsContainer">
-                <!-- Announcements will be displayed here -->
-            </div>
-        </div>
-
-        <!-- Resources view -->
-        <div id="resourcesView" style="display: none;">
-            <h2>Resources</h2>
-            <div id="resourcesContainer">
-                <!-- Resources will be displayed here -->
-            </div>
-        </div>
-
-        <!-- Logs view -->
-        <div id="logsView" style="display: none;">
-            <h2>Logs Chat</h2>
-            <div id="logsContainer">
-                <div class="logs-messages"></div>
-                <div class="logs-input-container">
-                    <input type="text" id="logsInput" placeholder="Type your message...">
-                    <button class="btn btn-send">Send</button>
+            <div class="right-sidebar-content">
+                <div class="parent-cases-list">
+                    <!-- Parent cases will be added here dynamically -->
                 </div>
             </div>
         </div>
 
-        <!-- Pings view -->
-        <div id="pingsView" style="display: none;">
-            <h2>Notifications</h2>
-            <div id="pingsContainer">
-                <div class="pings-list"></div>
+        <!-- Parent Case Modal -->
+        <div id="parentCaseModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Add Parent Case</h2>
+                    <button class="btn-close">
+                        <svg width="24" height="24" viewBox="0 0 24 24">
+                            <path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-form">
+                    <div class="form-group">
+                        <label for="parentCaseNumber">Case Number</label>
+                        <input type="text" id="parentCaseNumber" placeholder="Enter case number">
+                    </div>
+                    <div class="form-group">
+                        <label for="parentCaseDescription">Description</label>
+                        <textarea id="parentCaseDescription" placeholder="Enter case description"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="parentCaseSolution">Solution (Optional)</label>
+                        <textarea id="parentCaseSolution" placeholder="Enter solution if available"></textarea>
+                    </div>
+                    <div class="modal-buttons">
+                        <button class="btn btn-secondary btn-cancel">Cancel</button>
+                        <button class="btn btn-primary btn-submit">Submit</button>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
 
-    <!-- 
-        Modals
-        The application uses several modals for different actions:
-        1. Claim Modal: For claiming new cases
-        2. Parent Case Modal: For adding/editing parent cases
-        3. Delete Confirmation Modal: For confirming deletions
-    -->
-    
-    <!-- Claim modal -->
-    <div id="claimModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Claim Case</h2>
-                <button class="close-button">×</button>
-            </div>
-            <div class="modal-body">
-                <div class="input-group">
-                    <label>CASE NUMBER</label>
-                    <input 
-                        type="text" 
-                        id="caseNumberInput" 
-                        placeholder="Enter case number"
-                        autocomplete="off"
-                    />
+        <!-- Delete Confirmation Modal -->
+        <div id="deleteConfirmModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Confirm Delete</h2>
+                    <button class="btn-close">
+                        <svg width="24" height="24" viewBox="0 0 24 24">
+                            <path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/>
+                        </svg>
+                    </button>
                 </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-cancel">Cancel</button>
-                <button class="btn btn-submit">Claim</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Right sidebar -->
-    <div class="right-sidebar">
-        <div class="right-sidebar-header">
-            <div class="header-with-button">
-                <h3>Active Parent Cases</h3>
-                <button class="add-parent-case-btn">
-                    <svg width="16" height="16" viewBox="0 0 24 24">
-                        <path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
-                    </svg>
-                </button>
-            </div>
-        </div>
-        <div class="right-sidebar-content">
-            <div class="parent-cases-list">
-                <!-- Parent cases will be added here dynamically -->
-            </div>
-        </div>
-    </div>
-
-    <!-- Parent Case Modal -->
-    <div id="parentCaseModal" class="modal" style="display: none;">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Add Parent Case</h2>
-                <button class="btn-close">
-                    <svg width="24" height="24" viewBox="0 0 24 24">
-                        <path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/>
-                    </svg>
-                </button>
-            </div>
-            <div class="modal-form">
-                <div class="form-group">
-                    <label for="parentCaseNumber">Case Number</label>
-                    <input type="text" id="parentCaseNumber" placeholder="Enter case number">
-                </div>
-                <div class="form-group">
-                    <label for="parentCaseDescription">Description</label>
-                    <textarea id="parentCaseDescription" placeholder="Enter case description"></textarea>
-                </div>
-                <div class="form-group">
-                    <label for="parentCaseSolution">Solution (Optional)</label>
-                    <textarea id="parentCaseSolution" placeholder="Enter solution if available"></textarea>
-                </div>
-                <div class="modal-buttons">
-                    <button class="btn btn-secondary btn-cancel">Cancel</button>
-                    <button class="btn btn-primary btn-submit">Submit</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Delete Confirmation Modal -->
-    <div id="deleteConfirmModal" class="modal" style="display: none;">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Confirm Delete</h2>
-                <button class="btn-close">
-                    <svg width="24" height="24" viewBox="0 0 24 24">
-                        <path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/>
-                    </svg>
-                </button>
-            </div>
-            <div class="modal-form">
-                <p class="confirm-message">Are you sure you want to delete this parent case?</p>
-                <div class="modal-buttons">
-                    <button class="btn btn-secondary btn-cancel">Cancel</button>
-                    <button class="btn btn-danger btn-confirm">Delete</button>
+                <div class="modal-form">
+                    <p class="confirm-message">Are you sure you want to delete this parent case?</p>
+                    <div class="modal-buttons">
+                        <button class="btn btn-secondary btn-cancel">Cancel</button>
+                        <button class="btn btn-danger btn-confirm">Delete</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -354,6 +369,7 @@
         import Pings from './components/pings.js';
         import RightSidebar from './components/right-sidebar.js';
         import ParentCase from './components/parent-case.js';
+        import { createLoginPage } from './components/login.js';
 
         // Initialize all components
         const home = new Home();
@@ -376,6 +392,27 @@
         window.pings = pings;
         window.rightSidebar = rightSidebar;
         window.parentCase = parentCase;
+
+        // Check login state on load
+        document.addEventListener('DOMContentLoaded', () => {
+            const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+            const loginContainer = document.getElementById('loginContainer');
+            const mainContainer = document.getElementById('main-container');
+            
+            if (isLoggedIn) {
+                loginContainer.style.display = 'none';
+                mainContainer.style.display = 'flex';
+            } else {
+                loginContainer.appendChild(createLoginPage());
+                mainContainer.style.display = 'none';
+            }
+        });
+
+        // Handle logout
+        document.getElementById('logoutButton').addEventListener('click', () => {
+            localStorage.removeItem('isLoggedIn');
+            window.location.reload();
+        });
     </script>
 </body>
 </html>
