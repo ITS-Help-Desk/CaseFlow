@@ -41,7 +41,7 @@ usernameGroup.className = 'input-group';
 
 const usernameInput = document.createElement('input');
 usernameInput.type = 'text';
-usernameInput.placeholder = 'username';
+usernameInput.placeholder = 'Username';
 usernameInput.className = 'login-input';
 usernameInput.id = 'username';
 usernameGroup.appendChild(usernameInput);
@@ -52,7 +52,7 @@ passwordGroup.className = 'input-group';
 
 const passwordInput = document.createElement('input');
 passwordInput.type = 'password';
-passwordInput.placeholder = 'password';
+passwordInput.placeholder = 'Password';
 passwordInput.className = 'login-input';
 passwordInput.id = 'password';
 passwordGroup.appendChild(passwordInput);
@@ -60,45 +60,39 @@ passwordGroup.appendChild(passwordInput);
 // Additional signup fields in groups
 const fullNameGroup = document.createElement('div');
 fullNameGroup.className = 'input-group';
-const fullNameLabel = document.createElement('label');
-fullNameLabel.className = 'input-label signup-field';
-fullNameLabel.textContent = 'FULL NAME';
-fullNameLabel.style.display = 'none';
 const fullNameInput = document.createElement('input');
 fullNameInput.type = 'text';
 fullNameInput.placeholder = 'Enter your full name';
 fullNameInput.className = 'login-input signup-field';
 fullNameInput.style.display = 'none';
-fullNameGroup.appendChild(fullNameLabel);
 fullNameGroup.appendChild(fullNameInput);
 
 const emailGroup = document.createElement('div');
 emailGroup.className = 'input-group';
-const emailLabel = document.createElement('label');
-emailLabel.className = 'input-label signup-field';
-emailLabel.textContent = 'EMAIL';
-emailLabel.style.display = 'none';
+emailGroup.id = 'email-input-group';
 const emailInput = document.createElement('input');
 emailInput.type = 'email';
 emailInput.placeholder = 'Enter your email';
 emailInput.className = 'login-input signup-field';
 emailInput.style.display = 'none';
-emailGroup.appendChild(emailLabel);
 emailGroup.appendChild(emailInput);
 
 const confirmPasswordGroup = document.createElement('div');
 confirmPasswordGroup.className = 'input-group';
-const confirmPasswordLabel = document.createElement('label');
-confirmPasswordLabel.className = 'input-label signup-field';
-confirmPasswordLabel.textContent = 'CONFIRM PASSWORD';
-confirmPasswordLabel.style.display = 'none';
 const confirmPasswordInput = document.createElement('input');
 confirmPasswordInput.type = 'password';
 confirmPasswordInput.placeholder = 'Confirm your password';
 confirmPasswordInput.className = 'login-input signup-field';
 confirmPasswordInput.style.display = 'none';
-confirmPasswordGroup.appendChild(confirmPasswordLabel);
 confirmPasswordGroup.appendChild(confirmPasswordInput);
+
+// Add listener to password input for Enter key press
+passwordInput.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+        event.preventDefault(); // Prevent default Enter behavior (like newline)
+        loginButton.click(); // Trigger the login button click
+    }
+});
 
 const loginButtonContainer = document.createElement('div');
 loginButtonContainer.className = 'login-button-container';
@@ -114,9 +108,9 @@ loginButtonContainer.appendChild(loginButton);
 loginForm.appendChild(logoSection);
 loginForm.appendChild(formToggle);
 loginForm.appendChild(errorContainer);
-loginForm.appendChild(usernameGroup);
 loginForm.appendChild(fullNameGroup);
 loginForm.appendChild(emailGroup);
+loginForm.appendChild(usernameGroup);
 loginForm.appendChild(passwordGroup);
 loginForm.appendChild(confirmPasswordGroup);
 loginForm.appendChild(loginButtonContainer);
@@ -159,7 +153,9 @@ function toggleForm(mode) {
         field.style.display = isLoginMode ? 'none' : 'block';
     });
     
+    // Update the button text and class for proper styling
     loginButton.textContent = isLoginMode ? 'Sign in' : 'Sign up';
+    loginButton.className = isLoginMode ? 'login-button' : 'login-button signup-button';
     errorContainer.style.display = 'none';
 }
 

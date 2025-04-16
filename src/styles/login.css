@@ -1,15 +1,20 @@
+/* Main container for the entire login/registration page */
 .login-container {
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     height: 100vh;
     background-color: #1a1a1a;
     position: relative;
     overflow: hidden;
     padding: 24px 32px;
+    box-sizing: border-box;
+    width: 100%;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 }
 
+/* Background animation effect using pseudo-element */
 .login-container::before {
     content: '';
     position: absolute;
@@ -20,139 +25,229 @@
     z-index: 0;
 }
 
+/* Keyframes for the background pulse animation */
 @keyframes pulse {
     0% { transform: scale(1); opacity: 0.5; }
     50% { transform: scale(1.2); opacity: 0.7; }
     100% { transform: scale(1); opacity: 0.5; }
 }
 
+/* Container for the login form */
 .login-form-container {
     width: 100%;
     max-width: 600px;
     display: flex;
     flex-direction: column;
+    align-items: center;
     position: relative;
     z-index: 1;
+    box-sizing: border-box;
+    padding: 0;
 }
 
+/* The login form itself */
 .login-form {
     width: 100%;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    align-items: center;
+    gap: 0px;
     position: relative;
+    padding: 0;
+    margin-top: 10px;
+    box-sizing: border-box;
+    max-width: 300px;
 }
 
+/* Logo/title "CaseFlow" styling */
 .login-logo {
     text-align: center;
-    margin-bottom: 24px;
+    margin-bottom: 28px;
+    margin-top: -100px; /* Negative margin to position logo higher on page */
 }
 
+/* CaseFlow title text styling */
 .login-logo h1 {
     color: #ffffff;
-    font-size: 20px;
+    font-size: 42px;
     font-weight: 600;
     letter-spacing: 0.5px;
 }
 
-/* Form toggle styles */
+/* Sign in/Sign up toggle container */
 .form-toggle {
     display: flex;
     flex-direction: row;
     justify-content: space-between;
-    margin: 0 24px 48px 24px;
-    background-color: rgba(0, 0, 0, 0.1);
+    margin: 0 auto 32px auto;
+    background-color: #2c2c2c;
     padding: 4px;
-    border-radius: 12px;
-    width: calc(100% - 48px);
-    max-width: 600px;
+    border-radius: 14px;
+    width: 100%;
+    max-width: 300px;
+    min-width: 240px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    box-sizing: border-box;
 }
 
+/* Individual toggle buttons (Sign in / Sign up) */
 .toggle-btn {
     flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 8px 32px;
-    color: #b0b0b0;
-    border-radius: 8px;
+    padding: 8px 16px;  /* Reduce horizontal padding */
+    color: #9e9e9e;
+    border-radius: 10px;
     cursor: pointer;
     transition: all 0.2s ease-in-out;
     position: relative;
     user-select: none;
     background: none;
     border: none;
-    font-size: 14px;
+    font-size: 13px;
+    font-weight: 500;
     text-align: center;
-    height: 40px;
-    margin: 0 4px;
+    height: 36px;
+    margin: 0 3px;
+    gap: 6px;
+    white-space: nowrap; /* Prevent text wrapping */
+    min-width: 90px; /* Reduced from 110px */
 }
 
+/* Keyboard icon for Sign in button */
+.toggle-btn:first-child::before {
+    content: '';
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24'%3E%3Cpath fill='%23b0b0b0' d='M20,11H4c-0.6,0-1-0.4-1-1V4c0-0.6,0.4-1,1-1h16c0.6,0,1,0.4,1,1v6C21,10.6,20.6,11,20,11z M6,7h2v2h2V7h2v2h2V7h2v2h2V5H6V7z M4,21h16c0.6,0,1-0.4,1-1v-6c0-0.6-0.4-1-1-1H4c-0.6,0-1,0.4-1,1v6C3,20.6,3.4,21,4,21z M6,15h12v4H6V15z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+/* QR code icon for Sign Up button */
+.toggle-btn:last-child::before {
+    content: '';
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24'%3E%3Cpath fill='%23b0b0b0' d='M3,11h8V3H3V11z M5,5h4v4H5V5z M3,21h8v-8H3V21z M5,15h4v4H5V15z M13,3v8h8V3H13z M19,9h-4V5h4V9z M13,13h2v2h-2V13z M15,15h2v2h-2V15z M13,17h2v2h-2V17z M15,19h2v2h-2V19z M17,13h2v2h-2V13z M17,17h2v2h-2V17z M19,19h2v2h-2V19z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+/* Hover effect for toggle buttons */
 .toggle-btn:hover {
-    background-color: #252525;
+    background-color: rgba(255, 255, 255, 0.05);
     color: #ffffff;
 }
 
+/* Active/selected toggle button styling */
 .toggle-btn.active {
     color: #ffffff;
-    background-color: #2d2d2d;
+    background-color: #36393f;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    border: 1px solid #5865f2;
 }
 
+/* Change keyboard icon color when Sign in is active */
+.toggle-btn.active:first-child::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24'%3E%3Cpath fill='white' d='M20,11H4c-0.6,0-1-0.4-1-1V4c0-0.6,0.4-1,1-1h16c0.6,0,1,0.4,1,1v6C21,10.6,20.6,11,20,11z M6,7h2v2h2V7h2v2h2V7h2v2h2V5H6V7z M4,21h16c0.6,0,1-0.4,1-1v-6c0-0.6-0.4-1-1-1H4c-0.6,0-1,0.4-1,1v6C3,20.6,3.4,21,4,21z M6,15h12v4H6V15z'/%3E%3C/svg%3E");
+}
+
+/* Change QR code icon color when Sign Up is active */
+.toggle-btn.active:last-child::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24'%3E%3Cpath fill='white' d='M3,11h8V3H3V11z M5,5h4v4H5V5z M3,21h8v-8H3V21z M5,15h4v4H5V15z M13,3v8h8V3H13z M19,9h-4V5h4V9z M13,13h2v2h-2V13z M15,15h2v2h-2V15z M13,17h2v2h-2V17z M15,19h2v2h-2V19z M17,13h2v2h-2V13z M17,17h2v2h-2V17z M19,19h2v2h-2V19z'/%3E%3C/svg%3E");
+}
+
+/* Blue indicator line below the active toggle button */
+.toggle-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 20%;
+    width: 60%;
+    height: 2px;
+    background-color: #5865f2;
+    border-radius: 1px;
+}
+
+/* Error message styling */
 .login-error {
     background-color: rgba(237, 66, 69, 0.1);
     color: #ed4245;
     padding: 6px;
-    border-radius: 4px;
+    border-radius: 8px;
     font-size: 12px;
     text-align: center;
     border: 1px solid rgba(237, 66, 69, 0.2);
+    width: 100%;
+    max-width: 300px;
+    margin-left: auto;
+    margin-right: auto;
+    box-sizing: border-box;
 }
 
+/* Container for input fields */
 .input-group {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    margin-bottom: 12px;
+    gap: 0;
+    margin-bottom: 0px; /* Remove bottom margin since inputs have their own */
+    width: 100%;
+    max-width: 300px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 0;
+    box-sizing: border-box;
 }
 
+/* Remove the specific styling for consecutive input groups */
+.input-group + .input-group {
+    margin-top: 0px; /* Reset the negative margin */
+}
+
+/* Label styling for form fields - hide them visually */
 .input-label {
-    color: #72767d;
-    font-size: 12px;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    display: none; /* Hide all labels */
 }
 
+/* Input field styling (username, password) */
 .login-input {
-    padding: 8px 16px;
-    background-color: #252525;
-    border: 1px solid #2d2d2d;
-    border-radius: 4px;
+    padding: 12px 16px;
+    background-color: #222222;
+    border: 1px solid #363636;
+    border-radius: 6px;
     font-size: 14px;
     width: 100%;
-    height: 40px;
+    height: 46px;
     color: #ffffff;
     box-sizing: border-box;
     font-family: inherit;
+    margin: 0 0 12px 0; /* Add consistent bottom margin */
 }
 
+/* Placeholder text in input fields */
 .login-input::placeholder {
-    color: #72767d;
+    color: #666666;
     font-size: 13px;
     font-family: inherit;
 }
 
+/* Hover effect for input fields */
 .login-input:hover {
-    border-color: #3d3d3d;
-    background-color: #2a2a2a;
+    border-color: #4d4d4d;
 }
 
+/* Focus effect for input fields */
 .login-input:focus {
     outline: none;
-    border-color: #3d3d3d;
-    background-color: #2a2a2a;
+    border-color: #5865f2;
+    background-color: #222222;
 }
 
+/* Hidden signup fields (initially hidden, shown when switching to signup) */
 .signup-field {
     opacity: 0;
     height: 0;
@@ -161,45 +256,55 @@
     transition: all 0.2s ease-in-out;
 }
 
+/* Make signup fields visible when displayed */
 .signup-field[style*="block"] {
     opacity: 1;
     height: auto;
-    margin: 0;
+    margin: 0 0 12px 0; /* Update bottom margin for consistent spacing */
 }
 
+/* Container for login/signup button */
 .login-button-container {
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-top: 16px;
+    margin-top: 10px;
+    width: 100%;
+    max-width: 300px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
+/* Login/signup button styling */
 .login-button {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 4px;
-    background-color: #252525;
+    background-color: #222222;
     color: #ffffff;
     padding: 8px 16px;
     border: none;
-    border-radius: 4px;
+    border-radius: 12px;
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease-in-out;
     width: 100%;
-    height: 40px;
-    margin: 24px 0;
-    max-width: 520px;
+    height: 44px;
+    margin: 16px auto 24px auto;
+    max-width: 300px;
+    box-sizing: border-box;
 }
 
+/* Arrow in login button */
 .login-button::after {
     content: '→';
     font-size: 16px;
     margin-left: 4px;
 }
 
+/* Disabled state for login button */
 .login-button:disabled {
     background-color: #1a1a1a;
     color: #72767d;
@@ -207,11 +312,13 @@
     opacity: 0.7;
 }
 
+/* Hover effect for login button */
 .login-button:hover {
-    background-color: #2d2d2d;
+    background-color: #2a2a2a;
     transform: translateY(-1px);
 }
 
+/* Register prompt text */
 .register-prompt {
     text-align: left;
     margin-top: 16px;
@@ -219,6 +326,7 @@
     font-size: 13px;
 }
 
+/* Links in register prompt */
 .register-prompt a {
     color: #b0b0b0;
     text-decoration: none;
@@ -226,11 +334,12 @@
     transition: all 0.2s ease-in-out;
 }
 
+/* Hover effect for links */
 .register-prompt a:hover {
     color: #ffffff;
 }
 
-/* Right side content area - can be used for background image or content */
+/* Right side content area - placeholder for future content */
 .login-content {
     background-color: #1a1a1a;
     display: flex;
@@ -238,4 +347,19 @@
     justify-content: center;
     position: relative;
     overflow: hidden;
-} 
+}
+
+/* Container for input fields in signup mode - adjust spacing */
+.signup-field .input-group {
+    margin-bottom: 12px; /* Reduce spacing between signup fields */
+}
+
+/* Adjust spacing for sign-up button */
+.login-button.signup-button {
+    margin-top: 6px; /* Less margin for signup button */
+}
+
+/* Add extra margin below the email input group */
+#email-input-group {
+    margin-bottom: 10px; /* Add extra space below email */
+}
