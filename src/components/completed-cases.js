@@ -71,6 +71,11 @@ export default class CompletedCases {
         
         // Create card HTML structure
         card.innerHTML = `
+            <div class="profile-icon">
+                <div class="profile-placeholder">
+                    <i class="fas fa-user"></i>
+                </div>
+            </div>
             <div class="case-info">
                 <div class="case-header">
                     <span class="case-number">${caseNumber}</span>

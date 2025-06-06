@@ -122,6 +122,11 @@ export default class ClaimCase {
         const card = document.createElement('div');
         card.className = 'case-card';
         card.innerHTML = `
+            <div class="profile-icon">
+                <div class="profile-placeholder">
+                    <i class="fas fa-user"></i>
+                </div>
+            </div>
             <div class="case-info">
                 <div class="case-header">
                     <span class="case-number">${caseNumber}</span>

@@ -12,7 +12,7 @@
     margin-bottom: 8px;
 }
 
-.case-number {
+.parent-case-item .case-number {
     color: #ffffff;
     font-family: monospace;
     font-size: 1.1em;
