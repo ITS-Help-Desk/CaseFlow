@@ -210,7 +210,7 @@ loginForm.addEventListener('submit', async (e) => {
     
     try {
         const endpoint = isLoginMode ? '/api/user/login/' : '/api/user/signup/';
-        const requestBody = {
+        let requestBody = {
             username: username.trim(),
             password: password
         };
@@ -218,9 +218,13 @@ loginForm.addEventListener('submit', async (e) => {
         if (!isLoginMode) {
             // Add signup-specific fields exactly as specified in the API
             const [firstName, ...lastNameParts] = fullNameInput.value.trim().split(' ');
-            requestBody.email = emailInput.value.trim();
-            requestBody.first_name = firstName;
-            requestBody.last_name = lastNameParts.join(' ');
+            requestBody = {
+                username: username.trim(),
+                password: password,
+                email: emailInput.value.trim(),
+                first_name: firstName,
+                last_name: lastNameParts.join(' ')
+            };
         }
 
         const response = await fetch(`${API_BASE_URL}${endpoint}`, {
