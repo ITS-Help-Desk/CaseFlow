@@ -1,7 +1,10 @@
 // File: src/components/cases/claim-case.js
-// Purpose: Manages active case claiming, unclaiming, and completion locally
-// Dependencies: None
+// Purpose: Manages active case claiming, unclaiming, and completion with API integration
+// Dependencies: Django REST API
 // Author: Aditya Prakash
+
+// Add base URL for API endpoints
+const API_BASE_URL = 'http://10.41.16.153:8000';
 
 export default class ClaimCase {
     constructor() {
@@ -26,6 +29,7 @@ export default class ClaimCase {
                             autocomplete="off"
                         />
                     </div>
+                    <div class="error-message" id="claimErrorMessage"></div>
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-cancel">Cancel</button>
@@ -36,6 +40,7 @@ export default class ClaimCase {
 
         // Get input element after HTML is set
         this.caseNumberInput = document.getElementById('caseNumberInput');
+        this.errorMessage = document.getElementById('claimErrorMessage');
         
         // Bind methods
         this.promptForClaim = this.promptForClaim.bind(this);
@@ -43,6 +48,7 @@ export default class ClaimCase {
         this.closeModal = this.closeModal.bind(this);
         
         this.initialize();
+        this.loadActiveCases();
     }
 
     initialize() {
@@ -76,10 +82,82 @@ export default class ClaimCase {
         });
     }
 
+    // Get authentication headers
+    getAuthHeaders() {
+        const token = localStorage.getItem('authToken');
+        return {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Authorization': `Token ${token}`
+        };
+    }
+
+    // Load active cases from API
+    async loadActiveCases() {
+        try {
+            console.log('Loading cases from:', `${API_BASE_URL}/api/activeclaim/list/`);
+            
+            const response = await fetch(`${API_BASE_URL}/api/activeclaim/list/`, {
+                method: 'GET',
+                headers: this.getAuthHeaders()
+            });
+
+            console.log('Load cases response status:', response.status);
+            
+            // Get response text first to see what we're actually getting
+            const responseText = await response.text();
+            console.log('Load cases raw response:', responseText);
+
+            if (!response.ok) {
+                let errorMessage = `Failed to load cases: ${response.status}`;
+                try {
+                    const errorData = JSON.parse(responseText);
+                    errorMessage = errorData.detail || errorData.message || errorMessage;
+                } catch (e) {
+                    console.error('Non-JSON error response:', responseText);
+                }
+                throw new Error(errorMessage);
+            }
+
+            // Try to parse as JSON
+            let cases;
+            try {
+                cases = JSON.parse(responseText);
+            } catch (e) {
+                console.error('Cases response is not valid JSON:', responseText);
+                throw new Error('Server returned invalid JSON response');
+            }
+
+            this.displayActiveCases(cases);
+        } catch (error) {
+            console.error('Error loading active cases:', error);
+            // Don't show error to user for loading, just log it
+            // this.showError('Failed to load active cases');
+        }
+    }
+
+    // Display active cases from API data
+    displayActiveCases(cases) {
+        // Clear existing cases
+        this.casesContainer.innerHTML = '';
+        
+        // Debug: Log the API response to see the actual structure
+        console.log('API Response for active cases:', cases);
+        if (cases.length > 0) {
+            console.log('First case data structure:', cases[0]);
+        }
+        
+        cases.forEach(caseData => {
+            this.createCaseCard(caseData);
+        });
+    }
+
     promptForClaim() {
         if (this.claimModal) {
             this.claimModal.style.display = 'flex';
             this.caseNumberInput.value = '';
+            this.errorMessage.textContent = '';
+            this.errorMessage.style.display = 'none';
             this.caseNumberInput.focus();
         }
     }
@@ -88,39 +166,105 @@ export default class ClaimCase {
         if (this.claimModal) {
             this.claimModal.style.display = 'none';
             this.caseNumberInput.value = '';
+            this.errorMessage.textContent = '';
+            this.errorMessage.style.display = 'none';
         }
     }
 
-    submitClaim() {
+    async submitClaim() {
         try {
             const caseNumber = this.caseNumberInput.value.trim();
             if (!caseNumber) {
-                this.errorMessage.textContent = 'Please enter a case number';
+                this.showError('Please enter a case number');
                 return;
             }
 
-            if (this.isDuplicateCase(caseNumber)) {
-                this.errorMessage.textContent = 'This case has already been claimed';
-                return;
+            // Add loading state
+            const submitButton = this.claimModal.querySelector('.btn-submit');
+            submitButton.disabled = true;
+            submitButton.textContent = 'Claiming...';
+
+            console.log('Making request to:', `${API_BASE_URL}/api/activeclaim/create/${caseNumber}/`);
+            console.log('With headers:', this.getAuthHeaders());
+
+            const response = await fetch(`${API_BASE_URL}/api/activeclaim/create/${caseNumber}/`, {
+                method: 'POST',
+                headers: this.getAuthHeaders(),
+                body: JSON.stringify({
+                    casenum: caseNumber
+                })
+            });
+
+            console.log('Response status:', response.status);
+            console.log('Response headers:', response.headers);
+
+            // Get response text first to see what we're actually getting
+            const responseText = await response.text();
+            console.log('Raw response:', responseText);
+
+            if (!response.ok) {
+                // Try to parse as JSON, but if it fails, show the raw text
+                let errorMessage = `Server returned ${response.status}`;
+                try {
+                    const errorData = JSON.parse(responseText);
+                    errorMessage = errorData.detail || errorData.message || errorMessage;
+                } catch (e) {
+                    // If it's not JSON, it's probably an HTML error page
+                    errorMessage = `Server error: ${response.status} - Check console for details`;
+                    console.error('Non-JSON response:', responseText);
+                }
+                throw new Error(errorMessage);
             }
 
-            const userName = "Aditya Prakash";
-            this.createCaseCard(caseNumber, userName);
+            // Try to parse the successful response as JSON
+            let claimedCase;
+            try {
+                claimedCase = JSON.parse(responseText);
+            } catch (e) {
+                console.error('Response is not valid JSON:', responseText);
+                throw new Error('Server returned invalid JSON response');
+            }
+            
+            // Add the new case to the UI
+            this.createCaseCard(claimedCase);
             this.closeModal();
+            
         } catch (error) {
-            this.errorMessage.textContent = 'An error occurred while claiming the case.';
+            this.showError(error.message || 'An error occurred while claiming the case.');
             console.error('Claim error:', error);
+        } finally {
+            const submitButton = this.claimModal.querySelector('.btn-submit');
+            submitButton.disabled = false;
+            submitButton.textContent = 'Claim';
         }
     }
 
-    isDuplicateCase(caseNumber) {
-        const existingCases = this.casesContainer.querySelectorAll('.case-number');
-        return Array.from(existingCases).some(caseEl => caseEl.textContent === caseNumber);
+    showError(message) {
+        this.errorMessage.textContent = message;
+        this.errorMessage.style.display = 'block';
     }
 
-    createCaseCard(caseNumber, userName) {
+    createCaseCard(caseData) {
+        // Debug: Log the case data to see what fields are available
+        console.log('Creating case card with data:', caseData);
+        
         const card = document.createElement('div');
         card.className = 'case-card';
+        card.dataset.caseNumber = caseData.casenum; // Store the case number for future operations
+        
+        // Get user info from the case data or fallback to localStorage
+        const userName = caseData.user_name || caseData.username || localStorage.getItem('username') || 'Unknown User';
+        const claimedTime = caseData.claim_time ? 
+            new Date(caseData.claim_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 
+            new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        // Debug: Log what we're using for display
+        console.log('Case number field (caseData.casenum):', caseData.casenum);
+        console.log('Alternative case number field (caseData.case_number):', caseData.case_number);
+        console.log('All available fields:', Object.keys(caseData));
+        
+        const caseNumber = caseData.casenum || caseData.case_number || caseData.number || 'Unknown';
+        
         card.innerHTML = `
             <div class="profile-icon">
                 <div class="profile-placeholder">
@@ -135,7 +279,7 @@ export default class ClaimCase {
                 <div class="case-meta">
                     <span class="claimed-label">Claimed by ${userName}</span>
                     <span class="claimed-dot">•</span>
-                    <span class="claimed-time">${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    <span class="claimed-time">${claimedTime}</span>
                 </div>
             </div>
             <div class="card-actions">
@@ -156,12 +300,29 @@ export default class ClaimCase {
         this.casesContainer.appendChild(card);
     }
 
-    completeCase(card) {
-        if (card) {
-            const caseNumber = card.querySelector('.case-number').textContent;
+    async completeCase(card) {
+        if (!card) return;
+
+        try {
+            const caseNumber = card.dataset.caseNumber;
+            const caseNumberDisplay = card.querySelector('.case-number').textContent;
             const userTag = card.querySelector('.user-tag');
             const userName = userTag ? userTag.textContent.replace('@', '') : 'Unknown User';
-            
+
+            // Add loading state
+            const completeButton = card.querySelector('.btn-complete');
+            completeButton.disabled = true;
+            completeButton.textContent = 'Completing...';
+
+            const response = await fetch(`${API_BASE_URL}/api/activeclaim/complete/${caseNumber}/`, {
+                method: 'DELETE',
+                headers: this.getAuthHeaders()
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to complete case');
+            }
+
             // Add fade-out animation
             card.classList.add('fade-out');
             
@@ -170,7 +331,7 @@ export default class ClaimCase {
                 // Dispatch custom event for completed cases
                 const completedEvent = new CustomEvent('case-completed', {
                     detail: {
-                        caseNumber,
+                        caseNumber: caseNumberDisplay,
                         userName,
                         timestamp: new Date()
                     }
@@ -179,11 +340,37 @@ export default class ClaimCase {
                 
                 card.remove();
             }, 200); // Match the CSS transition duration
+
+        } catch (error) {
+            console.error('Error completing case:', error);
+            // Reset button state
+            const completeButton = card.querySelector('.btn-complete');
+            completeButton.disabled = false;
+            completeButton.innerHTML = '<i class="fas fa-check"></i><text>Complete</text>';
+            alert('Failed to complete case. Please try again.');
         }
     }
 
-    unclaimCase(card) {
-        if (card) {
+    async unclaimCase(card) {
+        if (!card) return;
+
+        try {
+            const caseNumber = card.dataset.caseNumber;
+
+            // Add loading state
+            const unclaimButton = card.querySelector('.btn-unclaim');
+            unclaimButton.disabled = true;
+            unclaimButton.textContent = 'Unclaiming...';
+
+            const response = await fetch(`${API_BASE_URL}/api/activeclaim/unclaim/${caseNumber}/`, {
+                method: 'DELETE',
+                headers: this.getAuthHeaders()
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to unclaim case');
+            }
+
             // Add fade-out animation
             card.classList.add('fade-out');
             
@@ -191,6 +378,14 @@ export default class ClaimCase {
             setTimeout(() => {
                 card.remove();
             }, 200); // Match the CSS transition duration
+
+        } catch (error) {
+            console.error('Error unclaiming case:', error);
+            // Reset button state
+            const unclaimButton = card.querySelector('.btn-unclaim');
+            unclaimButton.disabled = false;
+            unclaimButton.innerHTML = '<i class="fas fa-times"></i><text>Unclaim</text>';
+            alert('Failed to unclaim case. Please try again.');
         }
     }
 } 

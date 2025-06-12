@@ -3,11 +3,17 @@
  * 
  * Manages the display and interaction of completed cases in the application.
  * This component handles:
+ * - Loading completed cases from Django API
  * - Displaying completed cases in a list
  * - QA functionality for completed cases
+ * - Review submission to backend
  * - Animations and transitions for case cards
  * - Scroll behavior management
  */
+
+// Add base URL for API endpoints
+const API_BASE_URL = 'http://10.41.16.153:8000';
+
 export default class CompletedCases {
     /**
      * Initialize the CompletedCases component
@@ -19,6 +25,76 @@ export default class CompletedCases {
         this.completedView = document.getElementById('completedView');
         
         this.initialize();
+        this.loadCompletedCases();
+    }
+
+    // Get authentication headers
+    getAuthHeaders() {
+        const token = localStorage.getItem('authToken');
+        return {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Authorization': `Token ${token}`
+        };
+    }
+
+    // Load completed cases from API
+    async loadCompletedCases() {
+        try {
+            console.log('Loading completed cases from:', `${API_BASE_URL}/api/completeclaim/list/`);
+            
+            const response = await fetch(`${API_BASE_URL}/api/completeclaim/list/`, {
+                method: 'GET',
+                headers: this.getAuthHeaders()
+            });
+
+            console.log('Load completed cases response status:', response.status);
+            
+            // Get response text first to see what we're actually getting
+            const responseText = await response.text();
+            console.log('Load completed cases raw response:', responseText);
+
+            if (!response.ok) {
+                let errorMessage = `Failed to load completed cases: ${response.status}`;
+                try {
+                    const errorData = JSON.parse(responseText);
+                    errorMessage = errorData.detail || errorData.message || errorMessage;
+                } catch (e) {
+                    console.error('Non-JSON error response:', responseText);
+                }
+                throw new Error(errorMessage);
+            }
+
+            // Try to parse as JSON
+            let cases;
+            try {
+                cases = JSON.parse(responseText);
+            } catch (e) {
+                console.error('Completed cases response is not valid JSON:', responseText);
+                throw new Error('Server returned invalid JSON response');
+            }
+
+            this.displayCompletedCases(cases);
+        } catch (error) {
+            console.error('Error loading completed cases:', error);
+            // Don't show error to user for loading, just log it
+        }
+    }
+
+    // Display completed cases from API data
+    displayCompletedCases(cases) {
+        // Clear existing cases
+        this.completedContainer.innerHTML = '';
+        
+        // Debug: Log the API response to see the actual structure
+        console.log('API Response for completed cases:', cases);
+        if (cases.length > 0) {
+            console.log('First completed case data structure:', cases[0]);
+        }
+        
+        cases.forEach(caseData => {
+            this.createCompletedCaseCard(caseData);
+        });
     }
 
     /**
@@ -46,6 +122,9 @@ export default class CompletedCases {
         // Update active states in sidebar
         document.querySelectorAll('.sidebar-item').forEach(item => item.classList.remove('active'));
         document.querySelector('[data-view="completed"]').classList.add('active');
+        
+        // Reload completed cases when switching to this view
+        this.loadCompletedCases();
     }
 
     /**
@@ -60,16 +139,26 @@ export default class CompletedCases {
     }
 
     /**
-     * Add a new completed case to the view
-     * @param {string} caseNumber - The unique identifier for the case
-     * @param {string} userName - The name of the user who completed the case
-     * @param {Date} timestamp - When the case was completed
+     * Create a completed case card from API data
+     * @param {Object} caseData - The case data from the API
      */
-    addCompletedCase(caseNumber, userName, timestamp = new Date()) {
+    createCompletedCaseCard(caseData) {
+        // Debug: Log the case data to see what fields are available
+        console.log('Creating completed case card with data:', caseData);
+        
         const card = document.createElement('div');
         card.className = 'case-card';
+        card.dataset.caseNumber = caseData.casenum || caseData.case_number;
+        card.dataset.caseId = caseData.id; // Store the database ID for API operations
         
-        // Create card HTML structure
+        // Get user info from the case data
+        const userName = caseData.user_name || caseData.username || caseData.tech || 'Unknown User';
+        const completedTime = caseData.complete_time || caseData.claim_time || caseData.timestamp ? 
+            new Date(caseData.complete_time || caseData.claim_time || caseData.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 
+            new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        const caseNumber = caseData.casenum || caseData.case_number || caseData.number || 'Unknown';
+        
         card.innerHTML = `
             <div class="profile-icon">
                 <div class="profile-placeholder">
@@ -84,7 +173,7 @@ export default class CompletedCases {
                 <div class="case-meta">
                     <span class="completed-label">Completed by ${userName}</span>
                     <span class="completed-dot">•</span>
-                    <span class="completed-time">${timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    <span class="completed-time">${completedTime}</span>
                 </div>
                 <div class="comment-section" style="display: none;">
                     <textarea 
@@ -127,23 +216,21 @@ export default class CompletedCases {
         const rejectButton = card.querySelector('.btn-reject');
         const container = this.completedContainer;
 
+        // Handle approve button click
+        approveButton.addEventListener('click', () => this.reviewCase(card, 'approved', ''));
+
         // Handle done button click
-        neutralButton.addEventListener('click', () => {
-            card.classList.add('fade-out');
-            setTimeout(() => {
-                card.remove();
-            }, 200);
-        });
+        neutralButton.addEventListener('click', () => this.reviewCase(card, 'reviewed', ''));
+
+        // Handle reject/ping button click
+        rejectButton.addEventListener('click', () => this.reviewCase(card, 'rejected', ''));
 
         // Handle QA button click
         qaButton.addEventListener('click', (e) => {
             if (qaButton.classList.contains('btn-submit')) {
                 // Handle submit action
                 const commentText = commentSection.querySelector('.comment-input').value;
-                card.classList.add('fade-out');
-                setTimeout(() => {
-                    card.remove();
-                }, 200);
+                this.reviewCase(card, 'reviewed', commentText);
             } else {
                 // Handle toggle comment section
                 const isVisible = commentSection.style.display === 'block';
@@ -211,5 +298,80 @@ export default class CompletedCases {
         
         // Add the new card to the container
         this.completedContainer.insertBefore(card, this.completedContainer.firstChild);
+    }
+
+    /**
+     * Submit a review for a completed case to the Django API
+     * @param {HTMLElement} card - The case card element
+     * @param {string} status - The review status ('approved', 'rejected', 'reviewed')
+     * @param {string} comment - Optional comment for the review
+     */
+    async reviewCase(card, status, comment = '') {
+        if (!card) return;
+
+        try {
+            const caseId = card.dataset.caseId;
+            const caseNumber = card.dataset.caseNumber;
+
+            console.log('Reviewing case:', { caseId, caseNumber, status, comment });
+
+            const response = await fetch(`${API_BASE_URL}/api/completeclaim/review/${caseId}/`, {
+                method: 'POST',
+                headers: this.getAuthHeaders(),
+                body: JSON.stringify({
+                    status: status,
+                    comment: comment
+                })
+            });
+
+            console.log('Review response status:', response.status);
+
+            // Get response text first to see what we're actually getting
+            const responseText = await response.text();
+            console.log('Review raw response:', responseText);
+
+            if (!response.ok) {
+                let errorMessage = `Failed to review case: ${response.status}`;
+                try {
+                    const errorData = JSON.parse(responseText);
+                    errorMessage = errorData.detail || errorData.message || errorMessage;
+                } catch (e) {
+                    console.error('Non-JSON error response:', responseText);
+                }
+                throw new Error(errorMessage);
+            }
+
+            // Add fade-out animation and remove card
+            card.classList.add('fade-out');
+            setTimeout(() => {
+                card.remove();
+            }, 200);
+
+        } catch (error) {
+            console.error('Error reviewing case:', error);
+            alert('Failed to review case. Please try again.');
+        }
+    }
+
+    /**
+     * Add a new completed case to the view (called from other components)
+     * @param {string} caseNumber - The unique identifier for the case
+     * @param {string} userName - The name of the user who completed the case
+     * @param {Date} timestamp - When the case was completed
+     */
+    addCompletedCase(caseNumber, userName, timestamp = new Date()) {
+        // This method is called when a case is completed from the active cases
+        // We'll create a temporary case object for immediate display
+        const tempCaseData = {
+            casenum: caseNumber,
+            user_name: userName,
+            complete_time: timestamp.toISOString(),
+            id: `temp_${Date.now()}` // Temporary ID
+        };
+
+        this.createCompletedCaseCard(tempCaseData);
+        
+        // Optionally reload from API to get the actual data
+        // setTimeout(() => this.loadCompletedCases(), 1000);
     }
 } 
