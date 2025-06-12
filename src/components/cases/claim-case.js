@@ -12,6 +12,7 @@ export default class ClaimCase {
         this.casesContainer = document.getElementById('casesContainer');
         this.claimModal = document.getElementById('claimModal');
         this.websocket = null;
+        this.pendingClaims = new Set(); // Track cases being claimed by this client
         
         // Set up modal structure first
         this.claimModal.innerHTML = `
@@ -181,6 +182,9 @@ export default class ClaimCase {
                 return;
             }
 
+            // Add to pending claims to avoid WebSocket duplicates
+            this.pendingClaims.add(caseNumber);
+
             // Add loading state
             const submitButton = this.claimModal.querySelector('.btn-submit');
             submitButton.disabled = true;
@@ -231,7 +235,12 @@ export default class ClaimCase {
             this.createCaseCard(claimedCase);
             this.closeModal();
             
+            // Remove from pending claims after successful creation
+            this.pendingClaims.delete(caseNumber);
+            
         } catch (error) {
+            // Remove from pending claims on error
+            this.pendingClaims.delete(caseNumber);
             this.showError(error.message || 'An error occurred while claiming the case.');
             console.error('Claim error:', error);
         } finally {
@@ -254,8 +263,10 @@ export default class ClaimCase {
         card.className = 'case-card';
         card.dataset.caseNumber = caseData.casenum; // Store the case number for future operations
         
-        // Get user info from the case data or fallback to localStorage
-        const userName = caseData.user_name || caseData.username || localStorage.getItem('username') || 'Unknown User';
+        // Get user info from the case data
+        // For WebSocket data: data.user (from claim.lead_id.username)
+        // For API response: might have user_name, username, etc.
+        const userName = caseData.user || caseData.user_name || caseData.username || caseData.lead_id_username || 'Unknown User';
         const claimedTime = caseData.claim_time ? 
             new Date(caseData.claim_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 
             new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -436,8 +447,28 @@ export default class ClaimCase {
         switch (data.type) {
             case 'activeclaim':
                 if (data.event === 'claim') {
-                    // Someone claimed a case - add it to the UI
-                    this.createCaseCard(data);
+                    const currentUser = localStorage.getItem('username');
+                    const claimerUser = data.user; // From API: claim.lead_id.username
+                    
+                    console.log('Claim event - Current user:', currentUser);
+                    console.log('Claim event - Claimer user:', claimerUser);
+                    
+                    // Skip if this is a case we're currently claiming (to avoid duplicates with API response)
+                    if (this.pendingClaims.has(data.casenum)) {
+                        console.log('Skipping WebSocket update for pending claim:', data.casenum);
+                        return;
+                    }
+                    
+                    // Check if this case already exists in the UI to avoid duplicates
+                    const existingCard = this.casesContainer.querySelector(`[data-case-number="${data.casenum}"]`);
+                    
+                    if (!existingCard) {
+                        // Case doesn't exist in UI yet - add it
+                        console.log('Adding case via WebSocket:', data.casenum);
+                        this.createCaseCard(data);
+                    } else {
+                        console.log('Case already exists in UI, skipping duplicate:', data.casenum);
+                    }
                 } else if (data.event === 'complete') {
                     // Someone completed a case - remove it from the UI
                     this.removeCaseFromUI(data.casenum);
