@@ -11,6 +11,7 @@ export default class ClaimCase {
         this.claimSection = document.getElementById('claimSection');
         this.casesContainer = document.getElementById('casesContainer');
         this.claimModal = document.getElementById('claimModal');
+        this.websocket = null;
         
         // Set up modal structure first
         this.claimModal.innerHTML = `
@@ -49,6 +50,7 @@ export default class ClaimCase {
         
         this.initialize();
         this.loadActiveCases();
+        this.initializeWebSocket();
     }
 
     initialize() {
@@ -386,6 +388,84 @@ export default class ClaimCase {
             unclaimButton.disabled = false;
             unclaimButton.innerHTML = '<i class="fas fa-times"></i><text>Unclaim</text>';
             alert('Failed to unclaim case. Please try again.');
+        }
+    }
+
+    // WebSocket methods for real-time updates
+    initializeWebSocket() {
+        try {
+            // Use ws:// for development, wss:// for production
+            const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsHost = '10.41.16.153:8000'; // Your API host
+            this.websocket = new WebSocket(`${wsProtocol}//${wsHost}/ws/caseflow/`);
+
+            this.websocket.onopen = () => {
+                console.log('WebSocket connected to caseflow channel');
+            };
+
+            this.websocket.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    this.handleWebSocketMessage(data);
+                } catch (error) {
+                    console.error('Error parsing WebSocket message:', error);
+                }
+            };
+
+            this.websocket.onclose = (event) => {
+                console.log('WebSocket disconnected:', event.code, event.reason);
+                // Attempt to reconnect after 3 seconds
+                setTimeout(() => {
+                    console.log('Attempting to reconnect WebSocket...');
+                    this.initializeWebSocket();
+                }, 3000);
+            };
+
+            this.websocket.onerror = (error) => {
+                console.error('WebSocket error:', error);
+            };
+
+        } catch (error) {
+            console.error('Failed to initialize WebSocket:', error);
+        }
+    }
+
+    handleWebSocketMessage(data) {
+        console.log('Received WebSocket message:', data);
+        
+        switch (data.type) {
+            case 'activeclaim':
+                if (data.event === 'claim') {
+                    // Someone claimed a case - add it to the UI
+                    this.createCaseCard(data);
+                } else if (data.event === 'complete') {
+                    // Someone completed a case - remove it from the UI
+                    this.removeCaseFromUI(data.casenum);
+                } else if (data.event === 'unclaimed') {
+                    // Someone unclaimed a case - remove it from the UI
+                    this.removeCaseFromUI(data.casenum);
+                }
+                break;
+            default:
+                console.log('Unknown WebSocket message type:', data.type);
+        }
+    }
+
+    removeCaseFromUI(caseNumber) {
+        const card = this.casesContainer.querySelector(`[data-case-number="${caseNumber}"]`);
+        if (card) {
+            card.classList.add('fade-out');
+            setTimeout(() => {
+                card.remove();
+            }, 200);
+        }
+    }
+
+    // Clean up WebSocket connection when component is destroyed
+    destroy() {
+        if (this.websocket) {
+            this.websocket.close();
+            this.websocket = null;
         }
     }
 } 
