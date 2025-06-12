@@ -147,6 +147,15 @@ export default class CompletedCases {
     createCompletedCaseCard(caseData) {
         // Debug: Log the case data to see what fields are available
         console.log('Creating completed case card with data:', caseData);
+        console.log('Available user fields:', {
+            user: caseData.user,
+            user_name: caseData.user_name,
+            username: caseData.username,
+            tech: caseData.tech,
+            'claim.lead_id.username': caseData.claim && caseData.claim.lead_id && caseData.claim.lead_id.username,
+            'lead_id.username': caseData.lead_id && caseData.lead_id.username,
+            'claim.user': caseData.claim && caseData.claim.user
+        });
         
         const card = document.createElement('div');
         card.className = 'case-card';
@@ -154,7 +163,17 @@ export default class CompletedCases {
         card.dataset.caseId = caseData.id; // Store the database ID for API operations
         
         // Get user info from the case data
-        const userName = caseData.user_name || caseData.username || caseData.tech || 'Unknown User';
+        // For WebSocket data: data.user (from claim.lead_id.username)
+        // For API response: might have user_name, username, tech, etc.
+        // Also check nested structures like claim.lead_id.username
+        const userName = caseData.user || 
+                        caseData.user_name || 
+                        caseData.username || 
+                        caseData.tech || 
+                        (caseData.claim && caseData.claim.lead_id && caseData.claim.lead_id.username) ||
+                        (caseData.lead_id && caseData.lead_id.username) ||
+                        (caseData.claim && caseData.claim.user) ||
+                        'Unknown User';
         const completedTime = caseData.complete_time || caseData.claim_time || caseData.timestamp ? 
             new Date(caseData.complete_time || caseData.claim_time || caseData.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 
             new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
