@@ -3,62 +3,21 @@
 <head>
     <title>CaseFlow</title>
     
-    <!-- Core styles -->
+    <!-- Master CSS - Must be loaded first for design tokens -->
+    <link rel="stylesheet" href="styles/master.css">
+    
+    <!-- Component-specific styles -->
     <style>
-        /*
-         * Base styles for the application
-         * These styles establish the core layout and basic structure
-         * Variables and global styles should be defined here
-         */
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #121212;
-            color: #e0e0e0;
-            display: flex;
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        /* Main content wrapper - contains all views except sidebars */
-        .main-content {
-            flex: 1;
-            padding: 20px;
-            min-width: 0;
-            transition: margin-left 0.3s ease;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            box-sizing: border-box;
-        }
-
-        /* Ensures all direct children of main-content take full height */
-        .main-content > div {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            min-height: 0;
-        }
-
-        /* Global heading styles */
-        .main-content h1 {
-            margin-top: 0;
-            margin-bottom: 24px;
-            flex-shrink: 0;
-        }
-
-        /* Claim section container styles */
+        /* Component-specific layout overrides */
         #claimSection {
-            margin-bottom: 20px;
+            margin-bottom: var(--space-5);
             flex-shrink: 0;
         }
 
-        /* Container for case cards with scrolling */
         #casesContainer {
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: var(--space-4);
             overflow-y: auto;
             flex: 1;
             min-height: 0;
@@ -155,7 +114,9 @@
         <div class="main-content">
             <!-- Home view -->
             <div id="homeView" style="display: none;">
-                <h2>Welcome to CaseFlow</h2>
+                <div class="view-header">
+                    <h2>Welcome to CaseFlow</h2>
+                </div>
                 <div id="homeContainer">
                     <div class="dashboard-stats">
                         <div class="stat-card">
@@ -180,28 +141,30 @@
 
             <!-- Claim view -->
             <div id="claimView">
-                <h2>Cases</h2>
-                <div id="claimSection">
+                <div class="view-header">
+                    <h2>Cases</h2>
                     <button class="btn btn-claim" onclick="claimCase.promptForClaim()">Claim New Case</button>
                 </div>
-                <div id="casesContainer">
+                <div id="casesContainer" class="custom-scrollbar">
                     <!-- Claimed cases will be displayed here -->
                 </div>
             </div>
 
             <!-- Completed view -->
             <div id="completedView" style="display: none;">
-                <div id="completedSection">
+                <div class="view-header">
                     <h2>Completed Cases</h2>
                 </div>
-                <div id="completedContainer">
+                <div id="completedContainer" class="custom-scrollbar">
                     <!-- Completed cases will be displayed here -->
                 </div>
             </div>
 
             <!-- Announcements view -->
             <div id="announcementsView" style="display: none;">
-                <h2>Announcements</h2>
+                <div class="view-header">
+                    <h2>Announcements</h2>
+                </div>
                 <div id="announcementsContainer">
                     <!-- Announcements will be displayed here -->
                 </div>
@@ -209,7 +172,9 @@
 
             <!-- Resources view -->
             <div id="resourcesView" style="display: none;">
-                <h2>Resources</h2>
+                <div class="view-header">
+                    <h2>Resources</h2>
+                </div>
                 <div id="resourcesContainer">
                     <!-- Resources will be displayed here -->
                 </div>
@@ -217,7 +182,9 @@
 
             <!-- Logs view -->
             <div id="logsView" style="display: none;">
-                <h2>Logs Chat</h2>
+                <div class="view-header">
+                    <h2>Logs Chat</h2>
+                </div>
                 <div id="logsContainer">
                     <div class="logs-messages"></div>
                     <div class="logs-input-container">
@@ -229,7 +196,9 @@
 
             <!-- Pings view -->
             <div id="pingsView" style="display: none;">
-                <h2>Notifications</h2>
+                <div class="view-header">
+                    <h2>Notifications</h2>
+                </div>
                 <div id="pingsContainer">
                     <div class="pings-list"></div>
                 </div>
