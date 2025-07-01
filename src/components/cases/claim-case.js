@@ -8,13 +8,32 @@ const API_BASE_URL = 'http://10.41.16.153:8000';
 
 export default class ClaimCase {
     constructor() {
+        // Initialize DOM elements
         this.claimSection = document.getElementById('claimSection');
         this.casesContainer = document.getElementById('casesContainer');
         this.claimModal = document.getElementById('claimModal');
         this.websocket = null;
-        this.pendingClaims = new Set(); // Track cases being claimed by this client
+        this.pendingClaims = new Set();
+
+        // Set up modal structure
+        this.setupModal();
         
-        // Set up modal structure first
+        // Get input elements after HTML is set
+        this.caseNumberInput = document.getElementById('caseNumberInput');
+        this.errorMessage = document.getElementById('claimErrorMessage');
+        
+        // Bind methods to maintain context
+        this.promptForClaim = this.promptForClaim.bind(this);
+        this.submitClaim = this.submitClaim.bind(this);
+        this.closeModal = this.closeModal.bind(this);
+        
+        // Initialize components
+        this.initialize();
+        this.loadActiveCases();
+        this.initializeWebSocket();
+    }
+
+    setupModal() {
         this.claimModal.innerHTML = `
             <div class="modal-content">
                 <div class="modal-header">
@@ -39,39 +58,25 @@ export default class ClaimCase {
                 </div>
             </div>
         `;
-
-        // Get input element after HTML is set
-        this.caseNumberInput = document.getElementById('caseNumberInput');
-        this.errorMessage = document.getElementById('claimErrorMessage');
-        
-        // Bind methods
-        this.promptForClaim = this.promptForClaim.bind(this);
-        this.submitClaim = this.submitClaim.bind(this);
-        this.closeModal = this.closeModal.bind(this);
-        
-        this.initialize();
-        this.loadActiveCases();
-        this.initializeWebSocket();
     }
 
     initialize() {
-        // Add event listeners for the main claim button
+        // Add event listeners for claim buttons
         const claimButtons = document.querySelectorAll('.btn-claim');
         claimButtons.forEach(button => {
             button.addEventListener('click', this.promptForClaim);
         });
 
-        // Modal buttons
+        // Modal button event listeners
         const submitButton = this.claimModal.querySelector('.btn-submit');
-        submitButton?.addEventListener('click', this.submitClaim);
-
         const cancelButton = this.claimModal.querySelector('.btn-cancel');
-        cancelButton?.addEventListener('click', this.closeModal);
-
         const closeButton = this.claimModal.querySelector('.close-button');
+
+        submitButton?.addEventListener('click', this.submitClaim);
+        cancelButton?.addEventListener('click', this.closeModal);
         closeButton?.addEventListener('click', this.closeModal);
 
-        // Keyboard events
+        // Keyboard event listeners
         this.caseNumberInput?.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 this.submitClaim();
@@ -156,22 +161,18 @@ export default class ClaimCase {
     }
 
     promptForClaim() {
-        if (this.claimModal) {
-            this.claimModal.style.display = 'flex';
-            this.caseNumberInput.value = '';
-            this.errorMessage.textContent = '';
-            this.errorMessage.style.display = 'none';
-            this.caseNumberInput.focus();
-        }
+        this.claimModal.style.display = 'flex';
+        this.caseNumberInput.value = '';
+        this.errorMessage.textContent = '';
+        this.errorMessage.style.display = 'none';
+        this.caseNumberInput.focus();
     }
 
     closeModal() {
-        if (this.claimModal) {
-            this.claimModal.style.display = 'none';
-            this.caseNumberInput.value = '';
-            this.errorMessage.textContent = '';
-            this.errorMessage.style.display = 'none';
-        }
+        this.claimModal.style.display = 'none';
+        this.caseNumberInput.value = '';
+        this.errorMessage.textContent = '';
+        this.errorMessage.style.display = 'none';
     }
 
     async submitClaim() {
@@ -182,10 +183,7 @@ export default class ClaimCase {
                 return;
             }
 
-            // Add to pending claims to avoid WebSocket duplicates
             this.pendingClaims.add(caseNumber);
-
-            // Add loading state
             const submitButton = this.claimModal.querySelector('.btn-submit');
             submitButton.disabled = true;
             submitButton.textContent = 'Claiming...';
@@ -195,10 +193,7 @@ export default class ClaimCase {
 
             const response = await fetch(`${API_BASE_URL}/api/activeclaim/create/${caseNumber}/`, {
                 method: 'POST',
-                headers: this.getAuthHeaders(),
-                body: JSON.stringify({
-                    casenum: caseNumber
-                })
+                headers: this.getAuthHeaders()
             });
 
             console.log('Response status:', response.status);
@@ -235,18 +230,14 @@ export default class ClaimCase {
             this.createCaseCard(claimedCase);
             this.closeModal();
             
-            // Remove from pending claims after successful creation
-            this.pendingClaims.delete(caseNumber);
-            
         } catch (error) {
-            // Remove from pending claims on error
-            this.pendingClaims.delete(caseNumber);
             this.showError(error.message || 'An error occurred while claiming the case.');
             console.error('Claim error:', error);
         } finally {
             const submitButton = this.claimModal.querySelector('.btn-submit');
             submitButton.disabled = false;
             submitButton.textContent = 'Claim';
+            this.pendingClaims.delete(this.caseNumberInput.value.trim());
         }
     }
 
@@ -266,7 +257,7 @@ export default class ClaimCase {
         // Get user info from the case data
         // For WebSocket data: data.user (from claim.lead_id.username)
         // For API response: might have user_name, username, etc.
-        const userName = caseData.user || caseData.user_name || caseData.username || caseData.lead_id_username || 'Unknown User';
+        const userName = caseData.user_id?.username || 'Unknown User';
         const claimedTime = caseData.claim_time ? 
             new Date(caseData.claim_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 
             new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -287,7 +278,6 @@ export default class ClaimCase {
             <div class="case-info">
                 <div class="case-header">
                     <span class="case-number">${caseNumber}</span>
-                    <span class="status-text">Is being worked on by <span class="user-tag">@${userName}</span></span>
                 </div>
                 <div class="case-meta">
                     <span class="claimed-label">Claimed by ${userName}</span>
@@ -333,7 +323,8 @@ export default class ClaimCase {
             });
 
             if (!response.ok) {
-                throw new Error('Failed to complete case');
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to complete case');
             }
 
             // Add fade-out animation

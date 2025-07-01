@@ -181,26 +181,22 @@ export default class CompletedCases {
         const caseNumber = caseData.casenum || caseData.case_number || caseData.number || 'Unknown';
         
         card.innerHTML = `
-            <div class="profile-icon">
-                <div class="profile-placeholder">
-                    <i class="fas fa-user"></i>
+            <div class="case-details">
+                <div class="profile-icon">
+                    <div class="profile-placeholder">
+                        <i class="fas fa-user"></i>
+                    </div>
                 </div>
-            </div>
-            <div class="case-info">
-                <div class="case-header">
-                    <span class="case-number">${caseNumber}</span>
-                    <span class="status-text">Is completed by <span class="user-tag">@${userName}</span></span>
-                </div>
-                <div class="case-meta">
-                    <span class="completed-label">Completed by ${userName}</span>
-                    <span class="completed-dot">•</span>
-                    <span class="completed-time">${completedTime}</span>
-                </div>
-                <div class="comment-section" style="display: none;">
-                    <textarea 
-                        class="comment-input" 
-                        placeholder="Add your QA comments here..."
-                    ></textarea>
+                <div class="case-info">
+                    <div class="case-header">
+                        <span class="case-number">${caseNumber}</span>
+                        <span class="status-text">Is completed by <span class="user-tag">@${userName}</span></span>
+                    </div>
+                    <div class="case-meta">
+                        <span class="completed-label">Completed by ${userName}</span>
+                        <span class="completed-dot">•</span>
+                        <span class="completed-time">${completedTime}</span>
+                    </div>
                 </div>
             </div>
             <div class="card-actions">
@@ -224,7 +220,16 @@ export default class CompletedCases {
                         <path fill="currentColor" d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z"/>
                     </svg>
                 </button>
-                <button class="btn btn-cancel" title="Cancel" style="display: none;">Cancel</button>
+            </div>
+            <div class="comment-actions" style="display: none;">
+                <button class="btn btn-secondary btn-cancel">Cancel</button>
+                <button class="btn btn-primary btn-submit">Submit</button>
+            </div>
+            <div class="comment-section" style="display: none;">
+                <textarea 
+                    class="comment-input" 
+                    placeholder="Add your QA comments here..."
+                ></textarea>
             </div>
         `;
 
@@ -232,10 +237,21 @@ export default class CompletedCases {
         const qaButton = card.querySelector('.btn-qa');
         const cancelButton = card.querySelector('.btn-cancel');
         const commentSection = card.querySelector('.comment-section');
+        const cardActions = card.querySelector('.card-actions');
+        const commentActions = card.querySelector('.comment-actions');
         const approveButton = card.querySelector('.btn-approve');
         const neutralButton = card.querySelector('.btn-neutral');
         const rejectButton = card.querySelector('.btn-reject');
         const container = this.completedContainer;
+
+        // Store original actions
+        const originalActionsHTML = cardActions.innerHTML;
+
+        // Create comment actions HTML
+        const commentActionsHTML = `
+            <button class="btn btn-secondary btn-cancel">Cancel</button>
+            <button class="btn btn-primary btn-submit">Submit</button>
+        `;
 
         // Handle approve button click
         approveButton.addEventListener('click', () => this.reviewCase(card, 'approved', ''));
@@ -248,77 +264,91 @@ export default class CompletedCases {
 
         // Handle QA button click
         qaButton.addEventListener('click', (e) => {
-            if (qaButton.classList.contains('btn-submit')) {
-                // Handle submit action
-                const commentText = commentSection.querySelector('.comment-input').value;
-                this.reviewCase(card, 'reviewed', commentText);
-            } else {
-                // Handle toggle comment section
-                const isVisible = commentSection.style.display === 'block';
-                commentSection.style.display = isVisible ? 'none' : 'block';
-                card.classList.toggle('with-comment', !isVisible);
-                
-                if (!isVisible) {
-                    // Hide other buttons
-                    approveButton.classList.add('hidden');
-                    neutralButton.classList.add('hidden');
-                    rejectButton.classList.add('hidden');
-                    
-                    // Show submit button
-                    qaButton.innerHTML = 'Submit';
-                    qaButton.classList.add('btn-submit');
-                    qaButton.classList.remove('btn-qa');
-                    qaButton.title = 'Submit QA Comments';
-                    cancelButton.style.display = 'block';
+            e.stopPropagation(); // Prevent card click events
+            
+            const card = e.currentTarget.closest('.case-card');
+            const commentSection = card.querySelector('.comment-section');
+            const commentInput = card.querySelector('.comment-input');
+            const cardActions = card.querySelector('.card-actions');
+            
+            // Show comment section and swap buttons
+            commentSection.style.display = 'block';
+            card.classList.add('with-comment');
+            commentInput.focus();
+            cardActions.innerHTML = commentActionsHTML;
 
-                    // Handle scrolling for comment section
-                    setTimeout(() => {
-                        const cardBottom = card.offsetTop + card.offsetHeight;
-                        const containerHeight = container.offsetHeight;
-                        const currentScroll = container.scrollTop;
-                        const bottomOffset = cardBottom - (currentScroll + containerHeight) + 20;
+            // Add event listeners for new buttons
+            card.querySelector('.btn-cancel').addEventListener('click', (e) => {
+                e.stopPropagation();
+                commentSection.style.display = 'none';
+                card.classList.remove('with-comment');
+                cardActions.innerHTML = originalActionsHTML;
+                // Re-attach original listeners - this is complex, let's re-query for simplicity
+                this.rebindCardActions(card);
+            });
 
-                        if (bottomOffset > 0) {
-                            container.scrollBy({
-                                top: bottomOffset,
-                                behavior: 'smooth'
-                            });
-                        }
-                    }, 0);
-                } else {
-                    resetToInitialState();
+            card.querySelector('.btn-submit').addEventListener('click', (e) => {
+                e.stopPropagation();
+                const comment = commentInput.value.trim();
+                if (comment) {
+                    this.reviewCase(card, 'commented', comment);
                 }
-            }
+            });
         });
 
-        /**
-         * Reset the card to its initial state
-         * Hides comment section and restores button visibility
-         */
-        const resetToInitialState = () => {
-            commentSection.style.display = 'none';
-            card.classList.remove('with-comment');
-            qaButton.innerHTML = `
-                <svg width="16" height="16" viewBox="0 0 24 24">
-                    <path fill="currentColor" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
-                </svg>
-            `;
-            qaButton.classList.add('btn-qa');
-            qaButton.classList.remove('btn-submit');
-            qaButton.title = 'Add QA Comments';
-            cancelButton.style.display = 'none';
-            
-            // Show other buttons
-            approveButton.classList.remove('hidden');
-            neutralButton.classList.remove('hidden');
-            rejectButton.classList.remove('hidden');
-        };
+        this.completedContainer.appendChild(card);
+    }
 
-        // Add cancel button handler
-        cancelButton.addEventListener('click', resetToInitialState);
+    rebindCardActions(card) {
+        const qaButton = card.querySelector('.btn-qa');
+        if (qaButton) {
+             // The old listener is gone, so we re-bind it.
+             // This is a simplified approach. A more robust solution might use event delegation.
+            qaButton.addEventListener('click', (e) => {
+                e.stopPropagation();
+                
+                const currentCard = e.currentTarget.closest('.case-card');
+                const commentSection = currentCard.querySelector('.comment-section');
+                const commentInput = currentCard.querySelector('.comment-input');
+                const cardActions = currentCard.querySelector('.card-actions');
+                
+                const originalActionsHTML = cardActions.innerHTML;
+                const commentActionsHTML = `
+                    <button class="btn btn-secondary btn-cancel">Cancel</button>
+                    <button class="btn btn-primary btn-submit">Submit</button>
+                `;
+
+                commentSection.style.display = 'block';
+                currentCard.classList.add('with-comment');
+                commentInput.focus();
+                cardActions.innerHTML = commentActionsHTML;
+
+                currentCard.querySelector('.btn-cancel').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    commentSection.style.display = 'none';
+                    currentCard.classList.remove('with-comment');
+                    cardActions.innerHTML = originalActionsHTML;
+                    this.rebindCardActions(currentCard);
+                });
+
+                currentCard.querySelector('.btn-submit').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const comment = commentInput.value.trim();
+                    if (comment) {
+                        this.reviewCase(currentCard, 'commented', comment);
+                    }
+                });
+            });
+        }
+
+        const approveButton = card.querySelector('.btn-approve');
+        if(approveButton) approveButton.addEventListener('click', () => this.reviewCase(card, 'approved', ''));
         
-        // Add the new card to the container
-        this.completedContainer.insertBefore(card, this.completedContainer.firstChild);
+        const neutralButton = card.querySelector('.btn-neutral');
+        if(neutralButton) neutralButton.addEventListener('click', () => this.reviewCase(card, 'reviewed', ''));
+        
+        const rejectButton = card.querySelector('.btn-reject');
+        if(rejectButton) rejectButton.addEventListener('click', () => this.reviewCase(card, 'rejected', ''));
     }
 
     /**

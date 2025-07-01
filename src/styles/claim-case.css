@@ -1,23 +1,22 @@
 /* Case card styles */
 .case-card {
-    background-color: #1e1e1e;
-    border-radius: 4px;
-    padding: 8px 16px;
-    margin-bottom: 8px;
+    background-color: var(--color-bg-tertiary);
+    border-radius: var(--radius-base);
+    padding: var(--space-2) var(--space-4);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    transition: all 0.2s ease-out;
-    gap: 8px;
+    transition: all var(--transition-base);
+    gap: var(--space-2);
     will-change: transform, opacity;
     transform: translateZ(0);
-    flex-shrink: 0;
     min-height: fit-content;
     opacity: 1;
+    border: none;
 }
 
 .case-card:hover {
-    background-color: #252525;
+    background-color: var(--color-bg-hover);
 }
 
 .case-card.fade-out {
@@ -34,12 +33,12 @@
 .profile-placeholder {
     width: 40px;
     height: 40px;
-    border-radius: 50%;
-    background-color: #4f545c;
+    border-radius: var(--radius-full);
+    background-color: var(--color-text-disabled);
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #dcddde;
+    color: var(--color-text-secondary);
     font-size: 16px;
 }
 
@@ -48,7 +47,7 @@
     flex-direction: column;
     gap: 0px;
     flex: 1;
-    margin-left: 8px;
+    margin-left: var(--space-2);
     justify-content: center;
 }
 
@@ -59,24 +58,24 @@
 }
 
 .case-number {
-    font-family: 'Roboto Mono', monospace;
-    font-size: 0.9em;
-    color: #ffffff;
-    font-weight: 500;
+    font-family: var(--font-family-mono);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-white);
+    font-weight: var(--font-weight-medium);
 }
 
 .status-text {
-    color: #dcddde;
-    font-size: 0.95em;
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-base);
 }
 
 .case-meta {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: var(--space-2);
     margin-top: 0px;
-    color: #72767d;
-    font-size: 0.85em;
+    color: var(--color-text-subtle);
+    font-size: var(--font-size-sm);
 }
 
 .claimed-dot {
@@ -88,84 +87,74 @@
 }
 
 .user-tag {
-    background-color: #4361ee;
-    padding: 2px 8px;
-    border-radius: 12px;
-    font-size: 0.9em;
-    font-weight: 500;
-    color: white;
+    background-color: var(--color-brand-primary);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-xl);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-white);
     display: inline-flex;
     align-items: center;
 }
 
 .claimed-time {
-    color: #808080;
-    font-size: 0.85em;
+    color: var(--color-text-subtle);
+    font-size: var(--font-size-sm);
 }
 
 .card-actions {
     display: flex;
-    gap: 12px;
+    gap: var(--space-3);
 }
 
-.btn {
-    padding: 0 16px;
-    border-radius: 4px;
-    border: none;
-    cursor: pointer;
-    font-size: 0.85em;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    transition: all 0.2s ease;
+/* Case-specific button overrides */
+.case-card .btn {
     min-width: 110px;
-    font-weight: 500;
-    height: 32px;
     position: relative;
 }
 
-.btn i {
+.case-card .btn i {
     position: absolute;
-    left: 16px;
+    left: var(--space-4);
 }
 
-.btn::after {
+.case-card .btn::after {
     content: attr(data-text);
     position: absolute;
     left: 50%;
     transform: translateX(-50%);
 }
 
-.btn > i + text {
+.case-card .btn > i + text {
     opacity: 0;
 }
 
+/* Use master CSS button variants */
 .btn-complete {
-    background-color: #2d7d46;
-    color: white;
+    background-color: var(--color-success);
+    color: var(--color-text-white);
 }
 
 .btn-complete:hover {
-    background-color: #215b33;
+    background-color: var(--color-success-hover);
 }
 
 .btn-unclaim {
-    background-color: #4f545c;
-    color: white;
+    background-color: var(--color-text-disabled);
+    color: var(--color-text-white);
 }
 
 .btn-unclaim:hover {
-    background-color: #3b3e44;
+    background-color: var(--color-border-secondary);
 }
 
 .btn-claim {
-    background-color: #2d7d46;
-    color: white;
+    background-color: var(--color-success);
+    color: var(--color-text-white);
 }
 
 .btn-claim:hover {
-    background-color: #215b33;
+    background-color: var(--color-success-hover);
 }
 
 .btn-complete i,
@@ -173,49 +162,34 @@
     position: static;
 }
 
-/* Modal styles */
-.modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.85);
-    display: none;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-}
-
-.modal-content {
-    background-color: #2b2d31;
+/* Modal overrides - using master modal system */
+#claimModal .modal-content {
     width: 440px;
-    border-radius: 8px;
-    padding: 16px;
+    padding: var(--space-4);
 }
 
-.modal-header {
-    margin-bottom: 24px;
-    padding: 0 8px;
+#claimModal .modal-header {
+    margin-bottom: var(--space-6);
+    padding: 0 var(--space-2);
     position: relative;
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 
-.modal-header h2 {
-    color: #f2f3f5;
-    font-size: 24px;
-    font-weight: 500;
+#claimModal .modal-header h2 {
+    color: var(--color-text-white);
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-medium);
     margin: 0;
     padding: 0;
 }
 
-.close-button {
+#claimModal .close-button {
     position: static;
     background: none;
     border: none;
-    color: #b5bac1;
+    color: var(--color-text-muted);
     font-size: 24px;
     cursor: pointer;
     padding: 0;
@@ -224,35 +198,35 @@
     align-items: center;
 }
 
-.input-group {
-    margin-bottom: 20px;
-    padding: 0 8px;
+#claimModal .input-group {
+    margin-bottom: var(--space-5);
+    padding: 0 var(--space-2);
 }
 
-.input-group label {
+#claimModal .input-group label {
     display: block;
-    color: #949ba4;
-    font-size: 14px;
-    font-weight: 500;
-    margin: 0 0 8px 0;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    margin: 0 0 var(--space-2) 0;
     padding: 0;
 }
 
-.input-group input {
+#claimModal .input-group input {
     width: 100%;
-    padding: 12px;
-    background-color: #2b2d31;
+    padding: var(--space-3);
+    background-color: var(--color-bg-elevated);
     border: none;
-    border-radius: 4px;
-    color: #dcddde;
-    font-size: 16px;
+    border-radius: var(--radius-base);
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-base);
     line-height: 20px;
     height: 44px;
     box-sizing: border-box;
 }
 
-.input-group input::placeholder {
-    color: #72767d;
+#claimModal .input-group input::placeholder {
+    color: var(--color-text-subtle);
     line-height: 20px;
 }
 
@@ -271,52 +245,52 @@
     resize: vertical;
 }
 
-.modal-footer {
+#claimModal .modal-footer {
     display: flex;
     justify-content: flex-end;
-    gap: 8px;
+    gap: var(--space-2);
     margin-top: 0;
-    padding: 0 8px;
-    margin-bottom: 8px;
+    padding: 0 var(--space-2);
+    margin-bottom: var(--space-2);
 }
 
-.modal-footer .btn {
-    padding: 2px 16px;
+#claimModal .modal-footer .btn {
+    padding: var(--space-1) var(--space-4);
     height: 32px;
     min-width: 96px;
     border: none;
-    border-radius: 4px;
-    font-size: 15px;
-    font-weight: 500;
+    border-radius: var(--radius-base);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-medium);
     cursor: pointer;
 }
 
-.btn-submit {
-    background-color: #2d7d46;
-    color: #fff;
+#claimModal .btn-submit {
+    background-color: var(--color-success);
+    color: var(--color-text-white);
 }
 
-.btn-submit:hover {
-    background-color: #215b33;
+#claimModal .btn-submit:hover {
+    background-color: var(--color-success-hover);
 }
 
-.btn-cancel {
-    background-color: #4f545c;
-    color: #fff;
+#claimModal .btn-cancel {
+    background-color: var(--color-text-disabled);
+    color: var(--color-text-white);
 }
 
-.btn-cancel:hover {
-    background-color: #3b3e44;
+#claimModal .btn-cancel:hover {
+    background-color: var(--color-border-secondary);
 }
 
-.error-message {
-    color: #f23f42;
-    font-size: 14px;
-    margin-top: 8px;
+#claimModal .error-message {
+    color: var(--color-danger);
+    font-size: var(--font-size-sm);
+    margin-top: var(--space-2);
     display: none;
 }
 
-.error-message:not(:empty) {
+#claimModal .error-message:not(:empty) {
     display: block;
 }
 
@@ -324,29 +298,23 @@
     display: flex;
     flex-direction: column;
     height: 100%;
+    /* padding: var(--space-5); */ /* This is already handled by .main-content */
+    box-sizing: border-box;
+    gap: var(--space-6);
     overflow: hidden;
-    padding-top: 20px;
 }
 
 #claimView h2 {
-    color: #ffffff;
-    margin: 0 0 20px 0;
+    margin-bottom: var(--space-4);
 }
 
 #casesContainer {
-    flex: 1;
-    overflow-y: auto;
-    overflow-x: hidden;
-    padding-right: 8px;
     display: flex;
     flex-direction: column;
-    gap: 15px;       
-    max-height: calc(100vh - var(--header-height, 140px));
-    height: auto;
-    scroll-behavior: smooth;
-    overscroll-behavior-y: contain;
-    -webkit-overflow-scrolling: touch;
-    position: relative;
+    gap: var(--space-4);
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
 }
 
 /* Update scrollbar styles to match the container ID */

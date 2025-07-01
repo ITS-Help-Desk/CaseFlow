@@ -1,13 +1,13 @@
 /* Sidebar styles */
 .sidebar {
     width: 60px;
-    background-color: #1a1a1a;
+    background-color: var(--color-bg-secondary);
     height: 100vh;
-    padding: 8px 0 52px 0;
-    transition: all 0.2s ease-in-out;
+    padding: var(--space-2) 0 52px 0;
+    transition: all var(--transition-base);
     overflow-x: hidden;
     position: relative;
-    border-right: 1px solid #2d2d2d;
+    border-right: 1px solid var(--color-border-primary);
 }
 
 .sidebar:hover {
@@ -18,12 +18,12 @@
 .sidebar-item {
     display: flex;
     align-items: center;
-    padding: 8px 12px;
-    color: #b0b0b0;
-    border-radius: 4px;
+    padding: var(--space-2) var(--space-3);
+    color: var(--color-text-muted);
+    border-radius: var(--radius-base);
     cursor: pointer;
-    margin: 4px 8px;
-    transition: all 0.2s ease-in-out;
+    margin: var(--space-1) var(--space-2);
+    transition: all var(--transition-base);
     position: relative;
     min-height: 36px;
     user-select: none;
@@ -35,13 +35,13 @@
 }
 
 .sidebar-item:hover {
-    background-color: #252525;
-    color: #ffffff;
+    background-color: var(--color-bg-hover);
+    color: var(--color-text-white);
 }
 
 .sidebar-item.active {
-    color: #ffffff;
-    background-color: #2d2d2d;
+    color: var(--color-text-white);
+    background-color: var(--color-bg-active);
 }
 
 .channel-icon {
@@ -64,7 +64,7 @@
     white-space: nowrap;
     opacity: 0;
     pointer-events: none;
-    transition: all 0.2s ease-in-out;
+    transition: all var(--transition-base);
 }
 
 .sidebar:hover .sidebar-item span {
@@ -76,7 +76,7 @@
 .sidebar-icon {
     width: 20px;
     height: 20px;
-    border-radius: 4px;
+    border-radius: var(--radius-base);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -86,14 +86,14 @@
 }
 
 .sidebar-text {
-    margin-left: 12px;
+    margin-left: var(--space-3);
     white-space: nowrap;
     opacity: 0;
-    transition: opacity 0.3s ease;
+    transition: opacity var(--transition-slow);
     display: flex;
     align-items: center;
-    gap: 12px;
-    color: #b9bbbe;
+    gap: var(--space-3);
+    color: var(--color-text-muted);
     position: static;
 }
 
@@ -125,14 +125,14 @@
     bottom: 60px;
     left: 0;
     width: 60px;
-    padding: 8px 12px;
-    margin: 8px;
+    padding: var(--space-2) var(--space-3);
+    margin: var(--space-2);
     display: flex;
     align-items: center;
-    gap: 8px;
-    background-color: #1a1a1a;
-    border-top: 1px solid #2d2d2d;
-    border-radius: 4px;
+    gap: var(--space-2);
+    background-color: var(--color-bg-secondary);
+    border-top: 1px solid var(--color-border-primary);
+    border-radius: var(--radius-base);
     min-height: 36px;
     position: relative;
     z-index: 100;
@@ -141,20 +141,20 @@
 .status-dot {
     width: 8px;
     height: 8px;
-    border-radius: 50%;
-    background-color: #747f8d;
+    border-radius: var(--radius-full);
+    background-color: var(--color-text-subtle);
     position: absolute;
-    left: 12px;
+    left: var(--space-3);
     top: 50%;
     transform: translateY(-50%);
 }
 
 .status-dot.connected {
-    background-color: #3ba55c;
+    background-color: var(--color-success-light);
 }
 
 .status-dot.error {
-    background-color: #ed4245;
+    background-color: var(--color-danger);
 }
 
 .status-text {
