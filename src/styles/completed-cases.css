@@ -787,3 +787,39 @@
     pointer-events: none;
     display: none;
 }
+
+.comment-section textarea:focus {
+    border-color: var(--color-brand-primary);
+    box-shadow: 0 0 0 1px var(--color-brand-primary);
+}
+
+.btn-claim-review {
+    background-color: var(--color-success);
+    color: var(--color-text-white);
+}
+
+.btn-claim-review:hover {
+    background-color: var(--color-success-hover);
+}
+
+.case-card.is-locked {
+    position: relative;
+    pointer-events: none; /* Disables interaction */
+}
+
+.case-card.is-locked::after {
+    content: 'Reviewing by ' attr(data-reviewing-by);
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5); /* Tinted overlay */
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: var(--font-weight-semibold);
+    border-radius: var(--radius-lg); /* Match card's border radius */
+    z-index: 10;
+}

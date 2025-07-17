@@ -88,6 +88,8 @@ export default class ClaimCase {
                 this.closeModal();
             }
         });
+
+        document.addEventListener('show-claim-view', () => this.loadActiveCases());
     }
 
     // Get authentication headers
@@ -147,16 +149,30 @@ export default class ClaimCase {
     // Display active cases from API data
     displayActiveCases(cases) {
         // Clear existing cases
-        this.casesContainer.innerHTML = '';
+        // this.casesContainer.innerHTML = '';
         
         // Debug: Log the API response to see the actual structure
         console.log('API Response for active cases:', cases);
         if (cases.length > 0) {
             console.log('First case data structure:', cases[0]);
         }
-        
+
+        const caseNumbersFromServer = new Set(cases.map(c => String(c.casenum)));
+        const domCards = this.casesContainer.querySelectorAll('.case-card');
+        const domCaseNumbers = new Set(Array.from(domCards).map(card => card.dataset.caseNumber));
+
+        // Remove cards from the DOM that are no longer on the server
+        domCards.forEach(card => {
+            if (!caseNumbersFromServer.has(card.dataset.caseNumber)) {
+                card.remove();
+            }
+        });
+
+        // Add new cases from the server that aren't in the DOM yet
         cases.forEach(caseData => {
-            this.createCaseCard(caseData);
+            if (!domCaseNumbers.has(String(caseData.casenum))) {
+                this.createCaseCard(caseData);
+            }
         });
     }
 
@@ -333,14 +349,14 @@ export default class ClaimCase {
             // Wait for animation to complete before removing and dispatching event
             setTimeout(() => {
                 // Dispatch custom event for completed cases
-                const completedEvent = new CustomEvent('case-completed', {
+                /* const completedEvent = new CustomEvent('case-completed', {
                     detail: {
                         caseNumber: caseNumberDisplay,
                         userName,
                         timestamp: new Date()
                     }
                 });
-                document.dispatchEvent(completedEvent);
+                document.dispatchEvent(completedEvent); */
                 
                 card.remove();
             }, 200); // Match the CSS transition duration

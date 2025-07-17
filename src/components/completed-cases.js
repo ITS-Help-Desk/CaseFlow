@@ -85,17 +85,30 @@ export default class CompletedCases {
 
     // Display completed cases from API data
     displayCompletedCases(cases) {
-        // Clear existing cases
-        this.completedContainer.innerHTML = '';
+        // this.completedContainer.innerHTML = '';
         
         // Debug: Log the API response to see the actual structure
         console.log('API Response for completed cases:', cases);
         if (cases.length > 0) {
             console.log('First completed case data structure:', cases[0]);
         }
-        
+
+        const caseIdsFromServer = new Set(cases.map(c => String(c.id)));
+        const domCards = this.completedContainer.querySelectorAll('.case-card');
+        const domCaseIds = new Set(Array.from(domCards).map(card => card.dataset.caseId));
+
+        // Remove cards from the DOM that are no longer on the server
+        domCards.forEach(card => {
+            if (!caseIdsFromServer.has(card.dataset.caseId)) {
+                card.remove();
+            }
+        });
+
+        // Add new cases from the server that aren't in the DOM yet
         cases.forEach(caseData => {
-            this.createCompletedCaseCard(caseData);
+            if (!domCaseIds.has(String(caseData.id))) {
+                this.createCompletedCaseCard(caseData);
+            }
         });
     }
 
@@ -109,10 +122,10 @@ export default class CompletedCases {
         document.querySelector('[data-view="claim"]').addEventListener('click', () => this.hideCompletedView());
         
         // Listen for case completion events from other components
-        document.addEventListener('case-completed', (event) => {
+        /* document.addEventListener('case-completed', (event) => {
             const { caseNumber, userName, timestamp } = event.detail;
             this.addCompletedCase(caseNumber, userName, timestamp);
-        });
+        }); */
     }
 
     /**
@@ -138,6 +151,7 @@ export default class CompletedCases {
         // Update active states in sidebar
         document.querySelectorAll('.sidebar-item').forEach(item => item.classList.remove('active'));
         document.querySelector('[data-view="claim"]').classList.add('active');
+        document.dispatchEvent(new Event('show-claim-view'));
     }
 
     /**
@@ -180,6 +194,29 @@ export default class CompletedCases {
         
         const caseNumber = caseData.casenum || caseData.case_number || caseData.number || 'Unknown';
         
+        const originalActionsHTML = `
+            <button class="btn btn-approve" title="Kudos">
+                <svg width="16" height="16" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M22 9.24l-7.19-.62L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.63-7.03L22 9.24zM12 15.4l-3.76 2.27 1-4.28-3.32-2.88 4.38-.38L12 6.1l1.71 4.04 4.38.38-3.32 2.88 1 4.28L12 15.4z"/>
+                </svg>
+            </button>
+            <button class="btn btn-qa" title="Check with Comment">
+                <svg width="16" height="16" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+                </svg>
+            </button>
+            <button class="btn btn-neutral" title="Done">
+                <svg width="16" height="16" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M19 13H5v-2h14v2z"/>
+                </svg>
+            </button>
+            <button class="btn btn-reject" title="Ping">
+                <svg width="16" height="16" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z"/>
+                </svg>
+            </button>
+        `;
+
         card.innerHTML = `
             <div class="case-details">
                 <div class="profile-icon">
@@ -200,26 +237,7 @@ export default class CompletedCases {
                 </div>
             </div>
             <div class="card-actions">
-                <button class="btn btn-approve" title="Approve">
-                    <svg width="16" height="16" viewBox="0 0 24 24">
-                        <path fill="currentColor" d="M22 9.24l-7.19-.62L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.63-7.03L22 9.24zM12 15.4l-3.76 2.27 1-4.28-3.32-2.88 4.38-.38L12 6.1l1.71 4.04 4.38.38-3.32 2.88 1 4.28L12 15.4z"/>
-                    </svg>
-                </button>
-                <button class="btn btn-qa" title="Add QA Comments">
-                    <svg width="16" height="16" viewBox="0 0 24 24">
-                        <path fill="currentColor" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
-                    </svg>
-                </button>
-                <button class="btn btn-neutral" title="Done">
-                    <svg width="16" height="16" viewBox="0 0 24 24">
-                        <path fill="currentColor" d="M19 13H5v-2h14v2z"/>
-                    </svg>
-                </button>
-                <button class="btn btn-reject" title="Ping">
-                    <svg width="16" height="16" viewBox="0 0 24 24">
-                        <path fill="currentColor" d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z"/>
-                    </svg>
-                </button>
+                <!-- Actions are dynamically inserted here -->
             </div>
             <div class="comment-actions" style="display: none;">
                 <button class="btn btn-secondary btn-cancel">Cancel</button>
@@ -233,70 +251,85 @@ export default class CompletedCases {
             </div>
         `;
 
-        // Get references to card elements
-        const qaButton = card.querySelector('.btn-qa');
-        const cancelButton = card.querySelector('.btn-cancel');
-        const commentSection = card.querySelector('.comment-section');
         const cardActions = card.querySelector('.card-actions');
-        const commentActions = card.querySelector('.comment-actions');
-        const approveButton = card.querySelector('.btn-approve');
-        const neutralButton = card.querySelector('.btn-neutral');
-        const rejectButton = card.querySelector('.btn-reject');
-        const container = this.completedContainer;
+        const currentUser = localStorage.getItem('username');
+        
+        let reviewingUser = null;
+        if (caseData.lead_id) {
+            if (typeof caseData.lead_id === 'object' && caseData.lead_id !== null && caseData.lead_id.username) {
+                reviewingUser = caseData.lead_id.username; // Handles nested object: { username: '...' }
+            } else if (typeof caseData.lead_id === 'string') {
+                reviewingUser = caseData.lead_id; // Handles simple string: 'username'
+            }
+        }
 
-        // Store original actions
-        const originalActionsHTML = cardActions.innerHTML;
-
-        // Create comment actions HTML
-        const commentActionsHTML = `
-            <button class="btn btn-secondary btn-cancel">Cancel</button>
-            <button class="btn btn-primary btn-submit">Submit</button>
-        `;
-
-        // Handle approve button click
-        approveButton.addEventListener('click', () => this.reviewCase(card, 'approved', ''));
-
-        // Handle done button click
-        neutralButton.addEventListener('click', () => this.reviewCase(card, 'reviewed', ''));
-
-        // Handle reject/ping button click
-        rejectButton.addEventListener('click', () => this.reviewCase(card, 'rejected', ''));
-
-        // Handle QA button click
-        qaButton.addEventListener('click', (e) => {
-            e.stopPropagation(); // Prevent card click events
-            
-            const card = e.currentTarget.closest('.case-card');
-            const commentSection = card.querySelector('.comment-section');
-            const commentInput = card.querySelector('.comment-input');
-            const cardActions = card.querySelector('.card-actions');
-            
-            // Show comment section and swap buttons
-            commentSection.style.display = 'block';
-            card.classList.add('with-comment');
-            commentInput.focus();
-            cardActions.innerHTML = commentActionsHTML;
-
-            // Add event listeners for new buttons
-            card.querySelector('.btn-cancel').addEventListener('click', (e) => {
-                e.stopPropagation();
-                commentSection.style.display = 'none';
-                card.classList.remove('with-comment');
+        if (reviewingUser) {
+            if (reviewingUser === currentUser) {
+                // Current user is reviewing, show action buttons
                 cardActions.innerHTML = originalActionsHTML;
-                // Re-attach original listeners - this is complex, let's re-query for simplicity
                 this.rebindCardActions(card);
-            });
-
-            card.querySelector('.btn-submit').addEventListener('click', (e) => {
+            } else {
+                // Another user is reviewing, lock the card
+                card.classList.add('is-locked');
+                card.dataset.reviewingBy = reviewingUser;
+            }
+        } else {
+            // No one is reviewing, show the claim button
+            cardActions.innerHTML = `
+                <button class="btn btn-claim-review" data-text="Claim">
+                    <i class="fas fa-hand-paper"></i>
+                    <text>Claim</text>
+                </button>
+            `;
+            card.querySelector('.btn-claim-review').addEventListener('click', (e) => {
                 e.stopPropagation();
-                const comment = commentInput.value.trim();
-                if (comment) {
-                    this.reviewCase(card, 'commented', comment);
-                }
+                this.claimAndShowReview(card, originalActionsHTML);
             });
-        });
-
+        }
+        
         this.completedContainer.appendChild(card);
+    }
+
+    async claimAndShowReview(card, originalActionsHTML) {
+        card.dataset.claiming = 'true'; // Add a temporary flag
+        const caseId = card.dataset.caseId;
+        if (!caseId) {
+            console.error('No case ID found to begin review');
+            delete card.dataset.claiming; // Clean up flag
+            return;
+        }
+
+        const claimButton = card.querySelector('.btn-claim-review');
+        const claimButtonText = claimButton.querySelector('text');
+        claimButton.disabled = true;
+        if (claimButtonText) claimButtonText.textContent = 'Claiming...';
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/completeclaim/begin-review/${caseId}/`, {
+                method: 'POST',
+                headers: this.getAuthHeaders(),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ detail: 'Failed to begin review.' }));
+                throw new Error(errorData.detail || 'Failed to begin review.');
+            }
+
+            // On success, show the review buttons
+            const cardActions = card.querySelector('.card-actions');
+            cardActions.innerHTML = originalActionsHTML;
+            this.rebindCardActions(card);
+
+        } catch (error) {
+            console.error('Error beginning review:', error);
+            alert(error.message); // Or some other user-friendly error display
+
+            // Reset button on error
+            claimButton.disabled = false;
+            if (claimButtonText) claimButtonText.textContent = 'Claim';
+        } finally {
+            delete card.dataset.claiming; // Always clean up the flag
+        }
     }
 
     rebindCardActions(card) {
@@ -335,20 +368,14 @@ export default class CompletedCases {
                     e.stopPropagation();
                     const comment = commentInput.value.trim();
                     if (comment) {
-                        this.reviewCase(currentCard, 'commented', comment);
+                        this.reviewCase(currentCard, 'Checked', comment);
                     }
                 });
             });
         }
 
-        const approveButton = card.querySelector('.btn-approve');
-        if(approveButton) approveButton.addEventListener('click', () => this.reviewCase(card, 'approved', ''));
-        
         const neutralButton = card.querySelector('.btn-neutral');
-        if(neutralButton) neutralButton.addEventListener('click', () => this.reviewCase(card, 'reviewed', ''));
-        
-        const rejectButton = card.querySelector('.btn-reject');
-        if(rejectButton) rejectButton.addEventListener('click', () => this.reviewCase(card, 'rejected', ''));
+        if(neutralButton) neutralButton.addEventListener('click', () => this.reviewCase(card, 'Done', ''));
     }
 
     /**
@@ -410,7 +437,7 @@ export default class CompletedCases {
      * @param {string} userName - The name of the user who completed the case
      * @param {Date} timestamp - When the case was completed
      */
-    addCompletedCase(caseNumber, userName, timestamp = new Date()) {
+    /* addCompletedCase(caseNumber, userName, timestamp = new Date()) {
         // This method is called when a case is completed from the active cases
         // We'll create a temporary case object for immediate display
         const tempCaseData = {
@@ -424,7 +451,7 @@ export default class CompletedCases {
         
         // Optionally reload from API to get the actual data
         // setTimeout(() => this.loadCompletedCases(), 1000);
-    }
+    } */
 
     // WebSocket methods for real-time updates
     initializeWebSocket() {
@@ -471,8 +498,33 @@ export default class CompletedCases {
         switch (data.type) {
             case 'completeclaim':
                 if (data.event === 'begin-review') {
-                    // Someone started reviewing a case - add it to completed cases view
-                    this.createCompletedCaseCard(data);
+                    const { casenum, user: reviewingUser } = data;
+
+                    if (!casenum || !reviewingUser) {
+                        console.error('WebSocket message for begin-review is missing "casenum" or "user".', data);
+                        return;
+                    }
+
+                    const existingCard = this.completedContainer.querySelector(`[data-case-number="${casenum}"]`);
+                    if (!existingCard) {
+                        console.log('Received begin-review for a case not visible in the UI, ignoring.', casenum);
+                        return; // Card not found, do nothing.
+                    }
+
+                    // If this client is already in the process of claiming this card, ignore the echo.
+                    if (existingCard.dataset.claiming === 'true') {
+                        return;
+                    }
+
+                    const currentUser = localStorage.getItem('username');
+                    if (reviewingUser !== currentUser) {
+                        existingCard.classList.add('is-locked');
+                        existingCard.dataset.reviewingBy = reviewingUser;
+                        const cardActions = existingCard.querySelector('.card-actions');
+                        if (cardActions) {
+                            cardActions.innerHTML = ''; // Remove buttons for other users
+                        }
+                    }
                 } else if (data.event === 'review') {
                     // Someone finished reviewing a case - remove it from completed cases view
                     this.removeCompletedCaseFromUI(data.casenum);
@@ -480,8 +532,8 @@ export default class CompletedCases {
                 break;
             case 'activeclaim':
                 if (data.event === 'complete') {
-                    // Someone completed a case - add it to completed cases view
-                    this.createCompletedCaseCard(data);
+                    // Someone completed a case, reload the list to get the new case with its DB ID
+                    this.loadCompletedCases();
                 }
                 break;
             default:
