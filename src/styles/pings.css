@@ -9,6 +9,14 @@
     border-bottom: 1px solid #2d2d2d;
     cursor: pointer;
     transition: background-color 0.2s;
+    margin-bottom: 12px;
+    border-radius: 8px;
+    border: 1px solid #2d2d2d;
+}
+
+.ping-item:last-child {
+    border-bottom: 1px solid #2d2d2d;
+    margin-bottom: 0;
 }
 
 .ping-item:hover {
@@ -47,4 +55,161 @@
     content: "•";
     color: #5865f2;
     margin-right: 6px;
+}
+
+/* Ping Modal Styles */
+#pingModal .modal-content {
+    max-width: 500px;
+    width: 90%;
+}
+
+#pingModal .modal-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+#pingModal .header-icon {
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, #5865f2, #4752c4);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+
+#pingModal .form-group {
+    margin-bottom: 20px;
+}
+
+#pingModal .form-group label {
+    display: block;
+    color: #ffffff;
+    font-weight: 500;
+    margin-bottom: 8px;
+    font-size: 0.9em;
+}
+
+#pingModal select,
+#pingModal textarea {
+    width: 100%;
+    padding: 12px;
+    background: #2d2d2d;
+    border: 1px solid #404040;
+    border-radius: 6px;
+    color: #ffffff;
+    font-size: 14px;
+    resize: vertical;
+    transition: border-color 0.2s;
+}
+
+#pingModal select:focus,
+#pingModal textarea:focus {
+    outline: none;
+    border-color: #5865f2;
+}
+
+#pingModal textarea {
+    min-height: 100px;
+    font-family: inherit;
+}
+
+#pingModal .char-count {
+    text-align: right;
+    color: #72767d;
+    font-size: 0.8em;
+    margin-top: 4px;
+}
+
+#pingModal .modal-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 24px;
+}
+
+/* Ping Item Styles */
+.ping-item {
+    position: relative;
+}
+
+.ping-severity {
+    display: inline-block;
+    background: #404040;
+    color: #b0b0b0;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.75em;
+    margin-right: 8px;
+}
+
+.ping-actions {
+    margin-top: 12px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.ping-actions .btn {
+    padding: 6px 12px;
+    font-size: 0.85em;
+}
+
+.ping-acknowledge-section {
+    margin-top: 12px;
+    padding: 12px;
+    background: #252525;
+    border-radius: 6px;
+    border: 1px solid #404040;
+}
+
+.ping-acknowledge-section textarea {
+    width: 100%;
+    background: #2d2d2d;
+    border: 1px solid #404040;
+    border-radius: 4px;
+    color: #ffffff;
+    padding: 8px;
+    font-size: 0.9em;
+    resize: vertical;
+    min-height: 60px;
+    margin-bottom: 8px;
+}
+
+.ping-acknowledge-section textarea:focus {
+    outline: none;
+    border-color: #5865f2;
+}
+
+.ping-status {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.75em;
+    font-weight: 500;
+    margin-left: 8px;
+}
+
+.ping-status.pending {
+    background: #f59e0b;
+    color: #92400e;
+}
+
+.ping-status.acknowledged {
+    background: #3b82f6;
+    color: #1e40af;
+}
+
+.ping-status.resolved {
+    background: #10b981;
+    color: #064e3b;
+}
+
+.ping-status.unpinged {
+    background: #6b7280;
+    color: #374151;
 } 

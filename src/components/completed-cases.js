@@ -376,6 +376,12 @@ export default class CompletedCases {
 
         const neutralButton = card.querySelector('.btn-neutral');
         if(neutralButton) neutralButton.addEventListener('click', () => this.reviewCase(card, 'Done', ''));
+
+        const pingButton = card.querySelector('.btn-reject');
+        if(pingButton) pingButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.showPingModal(card);
+        });
     }
 
     /**
@@ -556,6 +562,176 @@ export default class CompletedCases {
         if (this.websocket) {
             this.websocket.close();
             this.websocket = null;
+        }
+    }
+
+    /**
+     * Show the ping modal for a specific case
+     * @param {HTMLElement} card - The case card element
+     */
+    showPingModal(card) {
+        const pingModal = document.getElementById('pingModal');
+        const caseNumber = card.dataset.caseNumber;
+        const caseId = card.dataset.caseId;
+        
+        // Store case info for when the ping is submitted
+        pingModal.dataset.caseNumber = caseNumber;
+        pingModal.dataset.caseId = caseId;
+        
+        // Reset form
+        document.getElementById('pingSeverity').value = '';
+        document.getElementById('pingDescription').value = '';
+        document.getElementById('pingTodo').value = '';
+        
+        // Show modal
+        pingModal.style.display = 'flex';
+        
+        // Set up event listeners
+        this.setupPingModalListeners();
+    }
+
+    /**
+     * Set up event listeners for the ping modal
+     */
+    setupPingModalListeners() {
+        const pingModal = document.getElementById('pingModal');
+        const cancelButton = pingModal.querySelector('.btn-cancel');
+        const submitButton = pingModal.querySelector('.btn-submit');
+        const closeButton = pingModal.querySelector('.btn-close');
+        
+        // Remove existing listeners to prevent duplicates
+        const newCancelButton = cancelButton.cloneNode(true);
+        const newSubmitButton = submitButton.cloneNode(true);
+        const newCloseButton = closeButton.cloneNode(true);
+        
+        cancelButton.parentNode.replaceChild(newCancelButton, cancelButton);
+        submitButton.parentNode.replaceChild(newSubmitButton, submitButton);
+        closeButton.parentNode.replaceChild(newCloseButton, closeButton);
+        
+        // Add new listeners
+        newCancelButton.addEventListener('click', () => this.closePingModal());
+        newCloseButton.addEventListener('click', () => this.closePingModal());
+        newSubmitButton.addEventListener('click', () => this.submitPing());
+        
+        // Character count updates
+        const descriptionTextarea = document.getElementById('pingDescription');
+        const todoTextarea = document.getElementById('pingTodo');
+        
+        const updateCharCount = (textarea, countElement) => {
+            const remaining = 4000 - textarea.value.length;
+            countElement.textContent = remaining;
+        };
+        
+        descriptionTextarea.addEventListener('input', () => {
+            updateCharCount(descriptionTextarea, descriptionTextarea.nextElementSibling);
+        });
+        
+        todoTextarea.addEventListener('input', () => {
+            updateCharCount(todoTextarea, todoTextarea.nextElementSibling);
+        });
+        
+        // Close modal on escape key
+        const handleEscape = (e) => {
+            if (e.key === 'Escape') {
+                this.closePingModal();
+                document.removeEventListener('keydown', handleEscape);
+            }
+        };
+        document.addEventListener('keydown', handleEscape);
+    }
+
+    /**
+     * Close the ping modal
+     */
+    closePingModal() {
+        const pingModal = document.getElementById('pingModal');
+        pingModal.style.display = 'none';
+    }
+
+    /**
+     * Submit a ping via API
+     */
+    async submitPing() {
+        const pingModal = document.getElementById('pingModal');
+        const severity = document.getElementById('pingSeverity').value;
+        const description = document.getElementById('pingDescription').value.trim();
+        const todo = document.getElementById('pingTodo').value.trim();
+        const caseNumber = pingModal.dataset.caseNumber;
+        const caseId = pingModal.dataset.caseId;
+        
+        // Validate form
+        if (!severity) {
+            alert('Please select a severity level');
+            return;
+        }
+        
+        if (!description) {
+            alert('Please provide a description of the issue');
+            return;
+        }
+        
+        // Map frontend severity to backend status
+        const statusMap = {
+            'Low': 'pingedlow',
+            'Moderate': 'pingedmed', 
+            'High': 'pingedhigh',
+            'Critical': 'pingedhigh' // Map Critical to High for now
+        };
+        
+        const backendStatus = statusMap[severity];
+        const comment = `${description}${todo ? `\n\nTo Do: ${todo}` : ''}`;
+        
+        try {
+            // Submit ping via API
+            const response = await fetch(`${API_BASE_URL}/api/completeclaim/review/${caseId}/`, {
+                method: 'POST',
+                headers: this.getAuthHeaders(),
+                body: JSON.stringify({
+                    status: backendStatus,
+                    comment: comment
+                })
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ detail: 'Failed to create ping' }));
+                throw new Error(errorData.detail || 'Failed to create ping');
+            }
+            
+            const reviewedClaim = await response.json();
+            
+            // Create ping object for frontend display
+            const ping = {
+                id: reviewedClaim.id,
+                caseNumber: caseNumber,
+                caseId: caseId,
+                severity: severity,
+                description: description,
+                todo: todo,
+                sender: localStorage.getItem('username') || 'Unknown User',
+                timestamp: new Date(reviewedClaim.review_time),
+                status: 'pending',
+                reviewedClaimId: reviewedClaim.id,
+                acknowledgedBy: null,
+                acknowledgedAt: null,
+                resolution: null,
+                resolvedAt: null
+            };
+            
+            // Add to pings view
+            if (window.pings) {
+                window.pings.addPing(ping);
+                // Send via WebSocket for real-time updates
+                window.pings.sendPingViaWebSocket(ping);
+            }
+            
+            // Close modal
+            this.closePingModal();
+            
+            console.log('Ping submitted successfully:', ping);
+            
+        } catch (error) {
+            console.error('Error creating ping:', error);
+            alert(`Failed to create ping: ${error.message}`);
         }
     }
 } 
