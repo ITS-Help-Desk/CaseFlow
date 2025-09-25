@@ -4,7 +4,7 @@
 // Author: Aditya Prakash
 
 // Import API configuration
-import { API_BASE_URL } from '../../config.js';
+const { API_BASE_URL } = require('../../config.js');
 
 export default class ClaimCase {
     constructor() {

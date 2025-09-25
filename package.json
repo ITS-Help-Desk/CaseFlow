@@ -4,8 +4,8 @@
     "description": "",
     "main": "./src/main.js",
     "scripts": {
-        "start": "electron .",
-        "dev": "electron . --debug",
+        "start": "./node_modules/.bin/electron .",
+        "dev": "./node_modules/.bin/electron . --debug",
         "build": "electron-builder"
     },
     "repository": {
@@ -20,6 +20,6 @@
     },
     "homepage": "https://github.com/AdityaPrakash2/ClaimApp#readme",
     "devDependencies": {
-        "electron": "^33.3.1"
+        "electron": "^38.1.2"
     }
 }
