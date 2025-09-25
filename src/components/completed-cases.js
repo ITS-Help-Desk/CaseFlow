@@ -11,8 +11,8 @@
  * - Scroll behavior management
  */
 
-// Add base URL for API endpoints
-const API_BASE_URL = 'http://10.80.16.166:8000';
+// Import API configuration
+import { API_BASE_URL } from '../../config.js';
 
 export default class CompletedCases {
     /**
