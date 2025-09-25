@@ -2,7 +2,7 @@ const loginContainer = document.createElement('div');
 loginContainer.className = 'login-container';
 
 // Import API configuration
-const { API_BASE_URL } = require('../config.js');
+import { API_BASE_URL } from '../../config.js';
 
 // Create the form container
 const loginFormContainer = document.createElement('div');
