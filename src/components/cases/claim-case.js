@@ -3,8 +3,8 @@
 // Dependencies: Django REST API
 // Author: Aditya Prakash
 
-// Add base URL for API endpoints
-const API_BASE_URL = 'http://10.41.16.153:8000';
+// Import API configuration
+const { API_BASE_URL } = require('../../config.js');
 
 export default class ClaimCase {
     constructor() {
