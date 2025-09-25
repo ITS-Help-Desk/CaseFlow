@@ -2,7 +2,7 @@ const loginContainer = document.createElement('div');
 loginContainer.className = 'login-container';
 
 // Add base URL for API endpoints
-const API_BASE_URL = 'http://10.41.16.153:8000';
+const API_BASE_URL = 'http://10.80.16.166:8000';
 
 // Create the form container
 const loginFormContainer = document.createElement('div');
