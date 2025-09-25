@@ -4,8 +4,8 @@
     "description": "",
     "main": "./src/main.js",
     "scripts": {
-        "start": "./node_modules/.bin/electron .",
-        "dev": "./node_modules/.bin/electron . --debug",
+        "start": "npx electron .",
+        "dev": "npx electron . --debug",
         "build": "electron-builder"
     },
     "repository": {
