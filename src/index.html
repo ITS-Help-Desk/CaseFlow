@@ -35,6 +35,7 @@
     <link rel="stylesheet" href="styles/pings.css">
     <link rel="stylesheet" href="styles/parent-case.css">
     <link rel="stylesheet" href="styles/login.css">
+    <link rel="stylesheet" href="styles/user-list.css"> <!-- Add this line -->
 </head>
 
 <!-- 
@@ -101,6 +102,14 @@
                 <span>resources</span>
             </div>
 
+            <!-- New Sidebar Item for User Management -->
+            <div class="sidebar-item" data-view="user-management">
+                <svg class="channel-icon" width="20" height="20" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                </svg>
+                <span>user management</span>
+            </div>
+
             <!-- Add logout button at the bottom -->
             <div class="sidebar-item logout-button" style="margin-top: auto;" id="logoutButton">
                 <svg class="channel-icon" width="20" height="20" viewBox="0 0 24 24">
@@ -140,7 +149,7 @@
             </div>
 
             <!-- Claim view -->
-            <div id="claimView">
+            <div id="claimView" style="display: flex;">
                 <div class="view-header">
                     <h2>Cases</h2>
                     <button class="btn btn-claim" onclick="claimCase.promptForClaim()">Claim New Case</button>
@@ -202,6 +211,14 @@
                 <div id="pingsContainer">
                     <div class="pings-list"></div>
                 </div>
+            </div>
+
+            <!-- New User Management View Container -->
+            <div id="userManagementView">
+                <div class="view-header">
+                    <h2>User Management</h2>
+                </div>
+                <!-- UserList component will be rendered here -->
             </div>
         </div>
 
@@ -387,6 +404,7 @@
         import RightSidebar from './components/right-sidebar.js';
         import ParentCase from './components/parent-case.js';
         import { createLoginPage } from './components/login.js';
+        import UserList from './components/user-list.js'; // Import UserList
 
         // Initialize all components
         const home = new Home();
@@ -398,6 +416,7 @@
         const pings = new Pings();
         const rightSidebar = new RightSidebar();
         const parentCase = new ParentCase();
+        const userList = new UserList(); // Initialize UserList
 
         // Make components globally accessible for cross-component communication
         window.home = home;
@@ -409,8 +428,32 @@
         window.pings = pings;
         window.rightSidebar = rightSidebar;
         window.parentCase = parentCase;
+        window.userList = userList; // Make UserList globally accessible
 
-        // Check login state on load
+        // Append UserList component to its container
+        document.getElementById('userManagementView').appendChild(userList.getContainer());
+        console.log("UserList container appended to:", userList.getContainer().parentNode.id); // Debug log
+
+        // Function to switch views
+        const switchView = (viewId) => {
+            console.log("Switching to view:", viewId); // Debug log
+            document.querySelectorAll('.main-content > div').forEach(view => {
+                view.style.display = 'none';
+                console.log("Hiding view:", view.id); // Debug log
+            });
+            const targetView = document.getElementById(viewId);
+            if (targetView) {
+                targetView.style.display = 'flex'; // Use flex for main views
+                console.log("Showing view:", targetView.id); // Debug log
+            }
+
+            document.querySelectorAll('.sidebar-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.querySelector(`.sidebar-item[data-view="${viewId.replace('View', '')}"]`).classList.add('active');
+        };
+
+        // Initial view load
         document.addEventListener('DOMContentLoaded', () => {
             const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
             const loginContainer = document.getElementById('loginContainer');
@@ -419,10 +462,19 @@
             if (isLoggedIn) {
                 loginContainer.style.display = 'none';
                 mainContainer.style.display = 'flex';
+                switchView('claimView'); // Set 'claimView' as the default active view after login
             } else {
                 loginContainer.appendChild(createLoginPage());
                 mainContainer.style.display = 'none';
             }
+        });
+
+        // Add event listeners for sidebar navigation
+        document.querySelectorAll('.sidebar-item').forEach(item => {
+            item.addEventListener('click', (event) => {
+                const view = event.currentTarget.dataset.view;
+                switchView(`${view}View`);
+            });
         });
 
         // Handle logout

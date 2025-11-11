@@ -1,3 +1,5 @@
+import { API_BASE_URL } from '../../config.js';
+
 export default class Home {
     constructor() {
         this.homeContainer = document.getElementById('homeContainer');
@@ -27,12 +29,55 @@ export default class Home {
             completed: 0,
             total: 0
         });
+        
+        this.fetchRoles(); // Fetch and display roles
     }
 
     updateStats(stats) {
         this.stats.active.textContent = stats.active;
         this.stats.completed.textContent = stats.completed;
         this.stats.total.textContent = stats.total;
+    }
+
+    async fetchRoles() {
+        try {
+            const authToken = localStorage.getItem('authToken');
+            const response = await fetch(`${API_BASE_URL}/api/user/roles/`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Token ${authToken}`
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const roles = await response.json();
+            this.displayRoles(roles);
+        } catch (error) {
+            console.error("Error fetching roles:", error);
+        }
+    }
+
+    displayRoles(roles) {
+        const rolesContainer = document.createElement('div');
+        rolesContainer.className = 'roles-container';
+        rolesContainer.innerHTML = '<h3>Available Roles:</h3>';
+        
+        const rolesList = document.createElement('ul');
+        rolesList.className = 'roles-list';
+        rolesList.style.color = 'white'; // Simple styling for visibility
+
+        roles.forEach(role => {
+            const listItem = document.createElement('li');
+            listItem.textContent = role.name;
+            rolesList.appendChild(listItem);
+        });
+        
+        rolesContainer.appendChild(rolesList);
+        this.homeContainer.appendChild(rolesContainer);
     }
 
     addActivity(activity) {

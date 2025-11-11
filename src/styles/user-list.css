@@ -1,0 +1,58 @@
+.user-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    color: var(--text-color-light);
+}
+
+.user-table th, .user-table td {
+    border: 1px solid var(--border-color);
+    padding: 10px;
+    text-align: left;
+}
+
+.user-table th {
+    background-color: var(--background-color-dark);
+}
+
+.roles-editor {
+    margin-top: 10px;
+    padding: 15px;
+    background-color: var(--background-color-light);
+    border-radius: var(--border-radius);
+}
+
+.roles-editor h4 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: var(--text-color-light);
+}
+
+.role-checkboxes label {
+    display: block;
+    margin-bottom: 5px;
+    color: var(--text-color-light);
+}
+
+.role-checkboxes input[type="checkbox"] {
+    margin-right: 5px;
+}
+
+.roles-editor-actions {
+    margin-top: 15px;
+    display: flex;
+    gap: 10px;
+}
+
+#userListContainer {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    flex-basis: auto; /* Add this line to ensure it takes up space */
+}
+
+.roles-editor-row {
+    background-color: var(--color-bg-secondary);
+    border-left: 3px solid var(--color-brand-primary);
+}
