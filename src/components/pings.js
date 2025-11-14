@@ -1,12 +1,19 @@
 // Import API configuration
 import { API_BASE_URL } from '../../config.js';
+import websocketManager from '../utils/websocket-manager.js';
 
 export default class Pings {
     constructor() {
         this.pingsContainer = document.getElementById('pingsContainer');
         this.pingsView = document.getElementById('pingsView');
-        this.pingsList = document.querySelector('.pings-list');
+        this.activePingsList = document.getElementById('activePingsList');
+        this.acknowledgedPingsList = document.getElementById('acknowledgedPingsList');
+        this.completedPingsList = document.getElementById('completedPingsList');
         this.websocket = null;
+        
+        // Local state management
+        this.pings = new Map(); // Store pings by ID for efficient lookup
+        this.isLoading = false;
         
         this.initialize();
         this.initializeWebSocket();
@@ -15,6 +22,34 @@ export default class Pings {
     initialize() {
         // Load pings from API
         this.loadPingsFromAPI();
+        
+        // Set up tab switching
+        this.setupTabs();
+    }
+    
+    setupTabs() {
+        const tabs = document.querySelectorAll('.ping-tab');
+        const sections = document.querySelectorAll('.pings-section');
+        
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const targetTab = tab.dataset.tab;
+                
+                // Remove active class from all tabs
+                tabs.forEach(t => t.classList.remove('active'));
+                // Add active class to clicked tab
+                tab.classList.add('active');
+                
+                // Hide all sections
+                sections.forEach(section => section.classList.remove('active'));
+                
+                // Show the target section
+                const targetSection = document.getElementById(`${targetTab}PingsSection`);
+                if (targetSection) {
+                    targetSection.classList.add('active');
+                }
+            });
+        });
     }
 
     // Get authentication headers
@@ -29,7 +64,10 @@ export default class Pings {
 
     // Load pings from API
     async loadPingsFromAPI() {
+        if (this.isLoading) return;
+        
         try {
+            this.isLoading = true;
             const response = await fetch(`${API_BASE_URL}/api/reviewedclaim/list/`, {
                 method: 'GET',
                 headers: this.getAuthHeaders()
@@ -49,24 +87,67 @@ export default class Pings {
                 .map(claim => this.convertReviewedClaimToPing(claim))
                 .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
-            // Clear existing pings
-            this.pingsList.innerHTML = '';
+            // Update local state
+            this.pings.clear();
+            pings.forEach(ping => this.pings.set(ping.id, ping));
             
-            if (pings.length === 0) {
-                this.showWelcomeMessage();
-            } else {
-                pings.forEach(ping => this.addPing(ping));
-            }
+            // Render pings
+            this.renderAllPings();
 
         } catch (error) {
             console.error('Error loading pings:', error);
             this.showWelcomeMessage();
+        } finally {
+            this.isLoading = false;
         }
+    }
+
+    // Render all pings from state, organized by status
+    renderAllPings() {
+        // Clear existing pings in all sections
+        this.activePingsList.innerHTML = '';
+        this.acknowledgedPingsList.innerHTML = '';
+        this.completedPingsList.innerHTML = '';
+        
+        if (this.pings.size === 0) {
+            this.showWelcomeMessage();
+            return;
+        }
+
+        // Categorize pings by status
+        const activePings = [];
+        const acknowledgedPings = [];
+        const completedPings = [];
+        
+        this.pings.forEach(ping => {
+            if (ping.status === 'acknowledged') {
+                acknowledgedPings.push(ping);
+            } else if (ping.status === 'resolved') {
+                completedPings.push(ping);
+            } else {
+                // pingedlow, pingedmed, pingedhigh, or pending
+                activePings.push(ping);
+            }
+        });
+        
+        // Sort each category by timestamp (newest first)
+        const sortByTimestamp = (a, b) => new Date(b.timestamp) - new Date(a.timestamp);
+        activePings.sort(sortByTimestamp);
+        acknowledgedPings.sort(sortByTimestamp);
+        completedPings.sort(sortByTimestamp);
+        
+        // Render pings in their respective sections
+        activePings.forEach(ping => this.renderPing(ping, this.activePingsList));
+        acknowledgedPings.forEach(ping => this.renderPing(ping, this.acknowledgedPingsList));
+        completedPings.forEach(ping => this.renderPing(ping, this.completedPingsList));
+        
+        // Show/hide empty state messages
+        this.updateEmptyStates(activePings.length, acknowledgedPings.length, completedPings.length);
     }
 
     // Check if a status is a ping status
     isPingStatus(status) {
-        return ['pingedlow', 'pingedmed', 'pingedhigh'].includes(status);
+        return ['pingedlow', 'pingedmed', 'pingedhigh', 'acknowledged', 'resolved'].includes(status);
     }
 
     // Convert backend status to frontend severity
@@ -89,6 +170,12 @@ export default class Pings {
         const description = parts[0] || '';
         const todo = parts[1] || '';
 
+        // Use the backend status directly - it's already in the right format
+        // 'pingedlow', 'pingedmed', 'pingedhigh' -> Active
+        // 'acknowledged' -> Acknowledged
+        // 'resolved' -> Completed
+        const frontendStatus = reviewedClaim.status;
+
         return {
             id: reviewedClaim.id,
             caseNumber: reviewedClaim.casenum,
@@ -98,49 +185,93 @@ export default class Pings {
             todo: todo,
             sender: reviewedClaim.lead_id?.username || 'Unknown User',
             timestamp: new Date(reviewedClaim.review_time),
-            status: 'pending', // All pings start as pending
+            status: frontendStatus, // Keep original backend status
             reviewedClaimId: reviewedClaim.id,
-            acknowledgedBy: null,
-            acknowledgedAt: null,
-            resolution: null,
+            acknowledgedBy: reviewedClaim.acknowledged_by?.username || null,
+            acknowledgedAt: reviewedClaim.acknowledge_time ? new Date(reviewedClaim.acknowledge_time) : null,
+            resolution: reviewedClaim.acknowledge_comment || null,
             resolvedAt: null
         };
     }
 
     // Show welcome message when no pings exist
     showWelcomeMessage() {
-        this.addPing({
-            id: 'welcome',
-            title: 'Welcome',
-            message: 'You will see your notifications here',
-            timestamp: new Date(),
-            read: false,
-            severity: 'Low',
-            status: 'pending'
-        });
+        // Clear all lists
+        this.activePingsList.innerHTML = '<div class="empty-state">No active pings</div>';
+        this.acknowledgedPingsList.innerHTML = '<div class="empty-state">No acknowledged pings</div>';
+        this.completedPingsList.innerHTML = '<div class="empty-state">No completed pings</div>';
+        
+        // Reset count badges
+        this.updateCountBadges(0, 0);
     }
 
-    loadPingsFromStorage() {
-        if (window.pingStorage && Array.isArray(window.pingStorage)) {
-            // Sort by timestamp (newest first)
-            const sortedPings = [...window.pingStorage].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-            sortedPings.forEach(ping => this.addPing(ping));
-        }
-    }
-
+    // Add or update a ping in state and UI
     addPing(ping) {
+        // Add to state
+        this.pings.set(ping.id, ping);
+        
+        // Re-render all pings to ensure they're in the correct sections
+        this.renderAllPings();
+    }
+
+    // Render a single ping to the UI in a specific container
+    renderPing(ping, targetList) {
         const pingElement = document.createElement('div');
         pingElement.className = `ping-item ${ping.read ? 'read' : 'unread'}`;
         pingElement.dataset.pingId = ping.id;
         
         // Build the ping content based on status
-        let content = this.buildPingContent(ping);
-        pingElement.innerHTML = content;
+        pingElement.innerHTML = this.buildPingContent(ping);
         
         // Add event listeners
         this.setupPingEventListeners(pingElement, ping);
         
-        this.pingsList.insertBefore(pingElement, this.pingsList.firstChild);
+        // Append to the target list
+        targetList.appendChild(pingElement);
+    }
+    
+    // Update empty state messages for each section
+    updateEmptyStates(activeCount, acknowledgedCount, completedCount) {
+        this.updateSectionEmptyState(this.activePingsList, activeCount, 'No active pings');
+        this.updateSectionEmptyState(this.acknowledgedPingsList, acknowledgedCount, 'No acknowledged pings');
+        this.updateSectionEmptyState(this.completedPingsList, completedCount, 'No completed pings');
+        
+        // Update count badges
+        this.updateCountBadges(activeCount, acknowledgedCount);
+    }
+    
+    // Update count badges on tabs
+    updateCountBadges(activeCount, acknowledgedCount) {
+        const activeCountBadge = document.getElementById('activeCount');
+        const acknowledgedCountBadge = document.getElementById('acknowledgedCount');
+        
+        if (activeCountBadge) {
+            activeCountBadge.textContent = activeCount;
+            activeCountBadge.style.display = activeCount > 0 ? 'inline-flex' : 'none';
+        }
+        
+        if (acknowledgedCountBadge) {
+            acknowledgedCountBadge.textContent = acknowledgedCount;
+            acknowledgedCountBadge.style.display = acknowledgedCount > 0 ? 'inline-flex' : 'none';
+        }
+    }
+    
+    // Update a single section's empty state
+    updateSectionEmptyState(sectionList, count, message) {
+        const existingMessage = sectionList.querySelector('.empty-state');
+        
+        if (count === 0) {
+            if (!existingMessage) {
+                const emptyState = document.createElement('div');
+                emptyState.className = 'empty-state';
+                emptyState.textContent = message;
+                sectionList.appendChild(emptyState);
+            }
+        } else {
+            if (existingMessage) {
+                existingMessage.remove();
+            }
+        }
     }
 
     buildPingContent(ping) {
@@ -150,7 +281,8 @@ export default class Pings {
         let actionsHTML = '';
         let acknowledgeSection = '';
         
-        if (ping.status === 'pending') {
+        // Active pings (pending, pingedlow, pingedmed, pingedhigh) show acknowledge button
+        if (ping.status === 'pending' || !['acknowledged', 'resolved', 'unpinged'].includes(ping.status)) {
             actionsHTML = `
                 <div class="ping-actions">
                     <button class="btn btn-primary btn-acknowledge">Acknowledge</button>
@@ -276,42 +408,74 @@ export default class Pings {
 
     async acknowledgePing(pingElement, ping, resolution) {
         try {
-            // Update ping data locally
+            // Call backend to acknowledge the ping
+            const response = await fetch(`${API_BASE_URL}/api/reviewedclaim/acknowledge/${ping.id}/`, {
+                method: 'POST',
+                headers: this.getAuthHeaders(),
+                body: JSON.stringify({
+                    acknowledge_comment: resolution
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ error: 'Failed to acknowledge ping' }));
+                throw new Error(errorData.error || 'Failed to acknowledge ping');
+            }
+
+            const updatedPing = await response.json();
+            console.log('Backend response:', updatedPing);
+
+            // Update local ping data with backend response
             ping.status = 'acknowledged';
             ping.acknowledgedBy = localStorage.getItem('username') || 'Current User';
             ping.acknowledgedAt = new Date();
             ping.resolution = resolution;
+            
+            // Update state
+            this.pings.set(ping.id, ping);
 
-            // Update UI
-            pingElement.innerHTML = this.buildPingContent(ping);
-            this.setupPingEventListeners(pingElement, ping);
+            // Re-render all pings to move it to the Acknowledged section
+            this.renderAllPings();
 
-            // Note: Backend doesn't have acknowledge endpoint, so we just update locally
-            // In a real implementation, you'd need to add an acknowledge endpoint
-            console.log('Ping acknowledged locally:', ping);
+            console.log('Ping acknowledged successfully:', ping);
 
         } catch (error) {
             console.error('Error acknowledging ping:', error);
-            alert('Failed to acknowledge ping');
+            alert(`Failed to acknowledge ping: ${error.message}`);
         }
     }
 
     async resolvePing(pingElement, ping) {
         try {
-            // For now, just update locally since we don't have a proper resolve endpoint
-            // The backend doesn't have a specific endpoint to update existing ReviewedClaim status
+            // Call backend to resolve the ping
+            const response = await fetch(`${API_BASE_URL}/api/reviewedclaim/resolve/${ping.id}/`, {
+                method: 'POST',
+                headers: this.getAuthHeaders()
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ error: 'Failed to resolve ping' }));
+                throw new Error(errorData.error || 'Failed to resolve ping');
+            }
+
+            const updatedPing = await response.json();
+            console.log('Backend response:', updatedPing);
+
+            // Update local ping data
             ping.status = 'resolved';
             ping.resolvedAt = new Date();
+            
+            // Update state
+            this.pings.set(ping.id, ping);
 
-            // Update UI
-            pingElement.innerHTML = this.buildPingContent(ping);
-            this.setupPingEventListeners(pingElement, ping);
+            // Re-render all pings to move it to the Completed section
+            this.renderAllPings();
 
-            console.log('Ping resolved locally:', ping);
+            console.log('Ping resolved successfully:', ping);
 
         } catch (error) {
             console.error('Error resolving ping:', error);
-            alert('Failed to resolve ping');
+            alert(`Failed to resolve ping: ${error.message}`);
         }
     }
 
@@ -320,10 +484,8 @@ export default class Pings {
             // Remove the ping from the UI
             pingElement.remove();
 
-            // Remove from storage if it exists
-            if (window.pingStorage) {
-                window.pingStorage = window.pingStorage.filter(p => p.id !== ping.id);
-            }
+            // Remove from state
+            this.pings.delete(ping.id);
 
             console.log('Ping removed:', ping);
 
@@ -333,49 +495,25 @@ export default class Pings {
         }
     }
 
-    updatePingInStorage(ping) {
-        if (window.pingStorage) {
-            const index = window.pingStorage.findIndex(p => p.id === ping.id);
-            if (index !== -1) {
-                window.pingStorage[index] = ping;
-            }
-        }
+    // Get ping by ID from state
+    getPingById(pingId) {
+        return this.pings.get(pingId);
+    }
+
+    // Get all pings from state
+    getAllPings() {
+        return Array.from(this.pings.values());
     }
 
     // WebSocket methods for real-time updates
     initializeWebSocket() {
         try {
-            // Use ws:// for development, wss:// for production
-            const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsHost = '10.41.16.153:8000'; // Your API host
-            this.websocket = new WebSocket(`${wsProtocol}//${wsHost}/ws/caseflow/`);
-
-            this.websocket.onopen = () => {
-                console.log('WebSocket connected to caseflow channel (pings)');
-            };
-
-            this.websocket.onmessage = (event) => {
-                try {
-                    const data = JSON.parse(event.data);
-                    this.handleWebSocketMessage(data);
-                } catch (error) {
-                    console.error('Error parsing WebSocket message:', error);
-                }
-            };
-
-            this.websocket.onclose = (event) => {
-                console.log('WebSocket disconnected:', event.code, event.reason);
-                // Attempt to reconnect after 3 seconds
-                setTimeout(() => {
-                    console.log('Attempting to reconnect WebSocket...');
-                    this.initializeWebSocket();
-                }, 3000);
-            };
-
-            this.websocket.onerror = (error) => {
-                console.error('WebSocket error:', error);
-            };
-
+            // Use the same 'caseflow' channel as other components
+            this.websocket = websocketManager.getConnection('caseflow');
+            
+            if (!this.websocket) {
+                console.log('Waiting for caseflow WebSocket connection...');
+            }
         } catch (error) {
             console.error('Failed to initialize WebSocket:', error);
         }
@@ -383,6 +521,9 @@ export default class Pings {
 
     handleWebSocketMessage(data) {
         console.log('Received WebSocket message (pings):', data);
+        
+        // Skip auth messages
+        if (data.type === 'auth') return;
         
         switch (data.type) {
             case 'ping':
@@ -403,57 +544,60 @@ export default class Pings {
     }
 
     updatePing(pingData) {
-        // Find existing ping element
-        const pingElement = this.pingsList.querySelector(`[data-ping-id="${pingData.id}"]`);
-        if (pingElement) {
-            // Update the ping data in storage
-            this.updatePingInStorage(pingData);
-            
-            // Rebuild the ping content
-            pingElement.innerHTML = this.buildPingContent(pingData);
-            this.setupPingEventListeners(pingElement, pingData);
-        }
+        // Update state
+        this.pings.set(pingData.id, pingData);
+        
+        // Re-render all pings since status change may move ping to different section
+        this.renderAllPings();
     }
 
     removePing(pingId) {
-        const pingElement = this.pingsList.querySelector(`[data-ping-id="${pingId}"]`);
-        if (pingElement) {
-            pingElement.remove();
+        // Try to find and remove the ping element from any of the lists
+        const lists = [this.activePingsList, this.acknowledgedPingsList, this.completedPingsList];
+        for (const list of lists) {
+            const pingElement = list.querySelector(`[data-ping-id="${pingId}"]`);
+            if (pingElement) {
+                pingElement.remove();
+                break;
+            }
         }
         
-        // Remove from storage
-        if (window.pingStorage) {
-            window.pingStorage = window.pingStorage.filter(p => p.id !== pingId);
-        }
+        // Remove from state
+        this.pings.delete(pingId);
+        
+        // Update empty states
+        this.renderAllPings();
     }
 
     // Send ping via WebSocket (for real-time updates)
     sendPingViaWebSocket(ping) {
-        if (this.websocket && this.websocket.readyState === WebSocket.OPEN) {
-            this.websocket.send(JSON.stringify({
-                type: 'ping',
-                event: 'create',
-                ping: ping
-            }));
+        const sent = websocketManager.send('caseflow', {
+            type: 'ping',
+            event: 'create',
+            ping: ping
+        });
+        
+        if (!sent) {
+            console.warn('Failed to send ping via WebSocket');
         }
     }
 
     // Send ping update via WebSocket
     sendPingUpdateViaWebSocket(ping) {
-        if (this.websocket && this.websocket.readyState === WebSocket.OPEN) {
-            this.websocket.send(JSON.stringify({
-                type: 'ping',
-                event: 'update',
-                ping: ping
-            }));
+        const sent = websocketManager.send('caseflow', {
+            type: 'ping',
+            event: 'update',
+            ping: ping
+        });
+        
+        if (!sent) {
+            console.warn('Failed to send ping update via WebSocket');
         }
     }
 
     // Clean up WebSocket connection when component is destroyed
     destroy() {
-        if (this.websocket) {
-            this.websocket.close();
-            this.websocket = null;
-        }
+        // WebSocket is managed by websocketManager and shared with other components
+        // No manual cleanup needed
     }
 } 

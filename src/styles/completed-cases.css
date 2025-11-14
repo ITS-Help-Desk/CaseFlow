@@ -15,14 +15,10 @@
     height: 100%;
     /* padding: var(--space-5); */ /* This is already handled by .main-content */
     box-sizing: border-box;
-    gap: var(--space-6);
     overflow: hidden;
 }
 
-/* Header section styling */
-#completedView h2 {
-    margin-bottom: var(--space-4);
-}
+/* Header section styling - margin now handled by .view-header */
 
 /* Container for completed case cards */
 #completedContainer {
@@ -32,6 +28,7 @@
     overflow-y: auto;
     flex: 1;
     min-height: 0;
+    padding-right: 8px;
 }
 
 /* Individual case card styling */
@@ -176,22 +173,7 @@
 }
 
 /* Scrollbar styling */
-#completedContainer::-webkit-scrollbar {
-    width: 8px;
-}
-
-#completedContainer::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-#completedContainer::-webkit-scrollbar-thumb {
-    background-color: #202225;
-    border-radius: 4px;
-}
-
-#completedContainer::-webkit-scrollbar-thumb:hover {
-    background-color: #2f3136;
-}
+/* Scrollbar styles consolidated below at line ~560 */
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
@@ -215,37 +197,11 @@
     flex-direction: column;
     height: 100%;
     overflow: hidden;
-    padding-top: 20px;
 }
 
-#completedContainer {
-    margin-bottom: 20px;
-}
+/* Duplicate styles removed - using main #completedContainer definition */
 
-#completedContainer h2 {
-    color: #ffffff;
-    margin: 0;
-}
-
-/* Completed cases container */
-#completedContainer {
-    flex: 1;
-    overflow-y: auto;
-    overflow-x: hidden;
-    padding-right: 8px;
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    max-height: calc(100vh - var(--header-height, 140px));
-    height: auto;
-    overscroll-behavior-y: contain;
-    position: relative;
-    transform: translate3d(0, 0, 0);
-    backface-visibility: hidden;
-    content-visibility: auto;
-    contain: content;
-    scroll-behavior: smooth;
-}
+/* Duplicate #completedContainer definition removed - using main definition above */
 
 /* Completed list item styles */
 .completed-list-item {
@@ -588,25 +544,23 @@
 }
 
 /* Enhanced scrollbar styles */
+/* Scrollbar styling - matches custom-scrollbar class */
 #completedContainer::-webkit-scrollbar {
     width: 8px;
-    background-color: transparent;
 }
 
 #completedContainer::-webkit-scrollbar-track {
-    background: #1e1e1e;
-    border-radius: 4px;
-    margin: 4px 0;
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-base);
 }
 
 #completedContainer::-webkit-scrollbar-thumb {
-    background: #4f545c;
-    border-radius: 4px;
-    min-height: 40px;
+    background: var(--color-bg-active);
+    border-radius: var(--radius-base);
 }
 
 #completedContainer::-webkit-scrollbar-thumb:hover {
-    background: #3d4045;
+    background: var(--color-border-secondary);
 }
 
 /* Update responsive adjustments to use CSS variables */

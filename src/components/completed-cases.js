@@ -13,6 +13,7 @@
 
 // Import API configuration
 import { API_BASE_URL } from '../../config.js';
+import websocketManager from '../utils/websocket-manager.js';
 
 export default class CompletedCases {
     /**
@@ -51,31 +52,20 @@ export default class CompletedCases {
             });
 
             console.log('Load completed cases response status:', response.status);
-            
-            // Get response text first to see what we're actually getting
-            const responseText = await response.text();
-            console.log('Load completed cases raw response:', responseText);
 
             if (!response.ok) {
                 let errorMessage = `Failed to load completed cases: ${response.status}`;
                 try {
-                    const errorData = JSON.parse(responseText);
+                    const errorData = await response.json();
                     errorMessage = errorData.detail || errorData.message || errorMessage;
                 } catch (e) {
-                    console.error('Non-JSON error response:', responseText);
+                    console.error('Failed to parse error response:', e);
                 }
                 throw new Error(errorMessage);
             }
 
-            // Try to parse as JSON
-            let cases;
-            try {
-                cases = JSON.parse(responseText);
-            } catch (e) {
-                console.error('Completed cases response is not valid JSON:', responseText);
-                throw new Error('Server returned invalid JSON response');
-            }
-
+            const cases = await response.json();
+            console.log('Loaded completed cases:', cases);
             this.displayCompletedCases(cases);
         } catch (error) {
             console.error('Error loading completed cases:', error);
@@ -159,35 +149,22 @@ export default class CompletedCases {
      * @param {Object} caseData - The case data from the API
      */
     createCompletedCaseCard(caseData) {
-        // Debug: Log the case data to see what fields are available
-        console.log('Creating completed case card with data:', caseData);
-        console.log('Available user fields:', {
-            user: caseData.user,
-            user_name: caseData.user_name,
-            username: caseData.username,
-            tech: caseData.tech,
-            'claim.lead_id.username': caseData.claim && caseData.claim.lead_id && caseData.claim.lead_id.username,
-            'lead_id.username': caseData.lead_id && caseData.lead_id.username,
-            'claim.user': caseData.claim && caseData.claim.user
-        });
-        
         const card = document.createElement('div');
         card.className = 'case-card';
         card.dataset.caseNumber = caseData.casenum || caseData.case_number;
         card.dataset.caseId = caseData.id; // Store the database ID for API operations
         
+        // Debug: Check what fields are available
+        console.log('CompleteClaim data:', {
+            user_name: caseData.user_name,
+            user_id: caseData.user_id,
+            allFields: Object.keys(caseData)
+        });
+        
         // Get user info from the case data
-        // For WebSocket data: data.user (from claim.lead_id.username)
-        // For API response: might have user_name, username, tech, etc.
-        // Also check nested structures like claim.lead_id.username
-        const userName = caseData.user || 
-                        caseData.user_name || 
-                        caseData.username || 
-                        caseData.tech || 
-                        (caseData.claim && caseData.claim.lead_id && caseData.claim.lead_id.username) ||
-                        (caseData.lead_id && caseData.lead_id.username) ||
-                        (caseData.claim && caseData.claim.user) ||
-                        'Unknown User';
+        // API provides user_name from serializer (the tech who completed the case)
+        const userName = caseData.user_name || caseData.user_id?.username || 'Unknown User';
+        console.log('Using userName:', userName);
         const completedTime = caseData.complete_time || caseData.claim_time || caseData.timestamp ? 
             new Date(caseData.complete_time || caseData.claim_time || caseData.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 
             new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -333,6 +310,11 @@ export default class CompletedCases {
     }
 
     rebindCardActions(card) {
+        // Kudos button (approve)
+        const approveButton = card.querySelector('.btn-approve');
+        if(approveButton) approveButton.addEventListener('click', () => this.reviewCase(card, 'kudos', ''));
+
+        // Check with Comment button (QA)
         const qaButton = card.querySelector('.btn-qa');
         if (qaButton) {
              // The old listener is gone, so we re-bind it.
@@ -367,16 +349,16 @@ export default class CompletedCases {
                 currentCard.querySelector('.btn-submit').addEventListener('click', (e) => {
                     e.stopPropagation();
                     const comment = commentInput.value.trim();
-                    if (comment) {
-                        this.reviewCase(currentCard, 'Checked', comment);
-                    }
+                    this.reviewCase(currentCard, 'checked', comment);
                 });
             });
         }
 
+        // Done button (neutral)
         const neutralButton = card.querySelector('.btn-neutral');
-        if(neutralButton) neutralButton.addEventListener('click', () => this.reviewCase(card, 'Done', ''));
+        if(neutralButton) neutralButton.addEventListener('click', () => this.reviewCase(card, 'done', ''));
 
+        // Ping button (reject)
         const pingButton = card.querySelector('.btn-reject');
         if(pingButton) pingButton.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -410,20 +392,19 @@ export default class CompletedCases {
 
             console.log('Review response status:', response.status);
 
-            // Get response text first to see what we're actually getting
-            const responseText = await response.text();
-            console.log('Review raw response:', responseText);
-
             if (!response.ok) {
                 let errorMessage = `Failed to review case: ${response.status}`;
                 try {
-                    const errorData = JSON.parse(responseText);
+                    const errorData = await response.json();
                     errorMessage = errorData.detail || errorData.message || errorMessage;
                 } catch (e) {
-                    console.error('Non-JSON error response:', responseText);
+                    console.error('Failed to parse error response:', e);
                 }
                 throw new Error(errorMessage);
             }
+
+            const reviewData = await response.json();
+            console.log('Review completed:', reviewData);
 
             // Add fade-out animation and remove card
             card.classList.add('fade-out');
@@ -462,37 +443,14 @@ export default class CompletedCases {
     // WebSocket methods for real-time updates
     initializeWebSocket() {
         try {
-            // Use ws:// for development, wss:// for production
-            const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsHost = '10.41.16.153:8000'; // Your API host
-            this.websocket = new WebSocket(`${wsProtocol}//${wsHost}/ws/caseflow/`);
-
-            this.websocket.onopen = () => {
-                console.log('WebSocket connected to caseflow channel (completed cases)');
-            };
-
-            this.websocket.onmessage = (event) => {
-                try {
-                    const data = JSON.parse(event.data);
-                    this.handleWebSocketMessage(data);
-                } catch (error) {
-                    console.error('Error parsing WebSocket message:', error);
-                }
-            };
-
-            this.websocket.onclose = (event) => {
-                console.log('WebSocket disconnected:', event.code, event.reason);
-                // Attempt to reconnect after 3 seconds
-                setTimeout(() => {
-                    console.log('Attempting to reconnect WebSocket...');
-                    this.initializeWebSocket();
-                }, 3000);
-            };
-
-            this.websocket.onerror = (error) => {
-                console.error('WebSocket error:', error);
-            };
-
+            // Use the same 'caseflow' channel as claim-case
+            // The websocketManager will reuse the existing connection
+            this.websocket = websocketManager.getConnection('caseflow');
+            
+            if (!this.websocket) {
+                // If no connection exists yet, it will be created by claim-case
+                console.log('Waiting for caseflow WebSocket connection...');
+            }
         } catch (error) {
             console.error('Failed to initialize WebSocket:', error);
         }
@@ -500,6 +458,9 @@ export default class CompletedCases {
 
     handleWebSocketMessage(data) {
         console.log('Received WebSocket message (completed cases):', data);
+        
+        // Skip auth messages
+        if (data.type === 'auth') return;
         
         switch (data.type) {
             case 'completeclaim':
@@ -559,10 +520,8 @@ export default class CompletedCases {
 
     // Clean up WebSocket connection when component is destroyed
     destroy() {
-        if (this.websocket) {
-            this.websocket.close();
-            this.websocket = null;
-        }
+        // WebSocket is managed by websocketManager and shared with other components
+        // No manual cleanup needed
     }
 
     /**
