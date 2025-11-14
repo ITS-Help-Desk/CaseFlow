@@ -5,6 +5,7 @@
 
 // Import API configuration
 import { API_BASE_URL } from '../../../config.js';
+import websocketManager from '../../utils/websocket-manager.js';
 
 export default class ClaimCase {
     constructor() {
@@ -113,31 +114,20 @@ export default class ClaimCase {
             });
 
             console.log('Load cases response status:', response.status);
-            
-            // Get response text first to see what we're actually getting
-            const responseText = await response.text();
-            console.log('Load cases raw response:', responseText);
 
             if (!response.ok) {
                 let errorMessage = `Failed to load cases: ${response.status}`;
                 try {
-                    const errorData = JSON.parse(responseText);
+                    const errorData = await response.json();
                     errorMessage = errorData.detail || errorData.message || errorMessage;
                 } catch (e) {
-                    console.error('Non-JSON error response:', responseText);
+                    console.error('Failed to parse error response:', e);
                 }
                 throw new Error(errorMessage);
             }
 
-            // Try to parse as JSON
-            let cases;
-            try {
-                cases = JSON.parse(responseText);
-            } catch (e) {
-                console.error('Cases response is not valid JSON:', responseText);
-                throw new Error('Server returned invalid JSON response');
-            }
-
+            const cases = await response.json();
+            console.log('Loaded cases:', cases);
             this.displayActiveCases(cases);
         } catch (error) {
             console.error('Error loading active cases:', error);
@@ -213,34 +203,21 @@ export default class ClaimCase {
             });
 
             console.log('Response status:', response.status);
-            console.log('Response headers:', response.headers);
-
-            // Get response text first to see what we're actually getting
-            const responseText = await response.text();
-            console.log('Raw response:', responseText);
 
             if (!response.ok) {
-                // Try to parse as JSON, but if it fails, show the raw text
                 let errorMessage = `Server returned ${response.status}`;
                 try {
-                    const errorData = JSON.parse(responseText);
+                    const errorData = await response.json();
                     errorMessage = errorData.detail || errorData.message || errorMessage;
                 } catch (e) {
-                    // If it's not JSON, it's probably an HTML error page
-                    errorMessage = `Server error: ${response.status} - Check console for details`;
-                    console.error('Non-JSON response:', responseText);
+                    errorMessage = `Server error: ${response.status}`;
+                    console.error('Failed to parse error response:', e);
                 }
                 throw new Error(errorMessage);
             }
 
-            // Try to parse the successful response as JSON
-            let claimedCase;
-            try {
-                claimedCase = JSON.parse(responseText);
-            } catch (e) {
-                console.error('Response is not valid JSON:', responseText);
-                throw new Error('Server returned invalid JSON response');
-            }
+            const claimedCase = await response.json();
+            console.log('Claimed case:', claimedCase);
             
             // Add the new case to the UI
             this.createCaseCard(claimedCase);
@@ -263,25 +240,16 @@ export default class ClaimCase {
     }
 
     createCaseCard(caseData) {
-        // Debug: Log the case data to see what fields are available
-        console.log('Creating case card with data:', caseData);
-        
         const card = document.createElement('div');
         card.className = 'case-card';
         card.dataset.caseNumber = caseData.casenum; // Store the case number for future operations
         
         // Get user info from the case data
-        // For WebSocket data: data.user (from claim.lead_id.username)
-        // For API response: might have user_name, username, etc.
-        const userName = caseData.user_id?.username || 'Unknown User';
+        // API provides user_name from serializer
+        const userName = caseData.user_name || caseData.user_id?.username || 'Unknown User';
         const claimedTime = caseData.claim_time ? 
             new Date(caseData.claim_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 
             new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        
-        // Debug: Log what we're using for display
-        console.log('Case number field (caseData.casenum):', caseData.casenum);
-        console.log('Alternative case number field (caseData.case_number):', caseData.case_number);
-        console.log('All available fields:', Object.keys(caseData));
         
         const caseNumber = caseData.casenum || caseData.case_number || caseData.number || 'Unknown';
         
@@ -412,37 +380,14 @@ export default class ClaimCase {
     // WebSocket methods for real-time updates
     initializeWebSocket() {
         try {
-            // Use ws:// for development, wss:// for production
-            const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsHost = '10.41.16.153:8000'; // Your API host
-            this.websocket = new WebSocket(`${wsProtocol}//${wsHost}/ws/caseflow/`);
-
-            this.websocket.onopen = () => {
-                console.log('WebSocket connected to caseflow channel');
-            };
-
-            this.websocket.onmessage = (event) => {
-                try {
-                    const data = JSON.parse(event.data);
+            this.websocket = websocketManager.connect('caseflow', {
+                path: '/ws/caseflow/',
+                authenticate: true,
+                reconnect: true,
+                onMessage: (event, data) => {
                     this.handleWebSocketMessage(data);
-                } catch (error) {
-                    console.error('Error parsing WebSocket message:', error);
                 }
-            };
-
-            this.websocket.onclose = (event) => {
-                console.log('WebSocket disconnected:', event.code, event.reason);
-                // Attempt to reconnect after 3 seconds
-                setTimeout(() => {
-                    console.log('Attempting to reconnect WebSocket...');
-                    this.initializeWebSocket();
-                }, 3000);
-            };
-
-            this.websocket.onerror = (error) => {
-                console.error('WebSocket error:', error);
-            };
-
+            });
         } catch (error) {
             console.error('Failed to initialize WebSocket:', error);
         }
@@ -501,9 +446,7 @@ export default class ClaimCase {
 
     // Clean up WebSocket connection when component is destroyed
     destroy() {
-        if (this.websocket) {
-            this.websocket.close();
-            this.websocket = null;
-        }
+        // WebSocket is managed by websocketManager, no need to manually close
+        // The manager handles cleanup and reconnection
     }
 } 

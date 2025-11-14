@@ -1,22 +1,134 @@
+/* Pings View Layout */
+#pingsView {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+}
+
+#pingsView .view-header {
+    margin-bottom: 0; /* Remove margin since tabs are below */
+}
+
 #pingsContainer {
-    background-color: #1e1e1e;
-    border-radius: 8px;
-    border: 1px solid #2d2d2d;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+}
+
+/* Sections have their own padding */
+.pings-section {
+    display: none;
+    padding: var(--space-4) 8px 0 8px;
+    animation: fadeIn 0.2s ease-in-out;
+}
+
+/* Pings Tabs Navigation */
+.pings-tabs {
+    display: flex;
+    gap: var(--space-2);
+    margin-bottom: 0;
+    border-bottom: 2px solid var(--color-border-primary);
+    padding: 0 8px; /* Match container padding */
+    flex-shrink: 0;
+}
+
+.ping-tab {
+    background: transparent;
+    border: none;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-medium);
+    padding: var(--space-3) var(--space-4);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px; /* Overlap the container border */
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.ping-tab:hover {
+    color: var(--color-text-primary);
+    background: var(--color-bg-hover);
+}
+
+.ping-tab.active {
+    color: var(--color-text-white);
+    border-bottom-color: var(--color-brand-primary);
+}
+
+/* Color coded tab indicators */
+.ping-tab[data-tab="active"].active {
+    border-bottom-color: var(--color-warning);
+}
+
+.ping-tab[data-tab="acknowledged"].active {
+    border-bottom-color: var(--color-info);
+}
+
+.ping-tab[data-tab="completed"].active {
+    border-bottom-color: var(--color-success);
+}
+
+/* Count Badges */
+.ping-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-danger);
+    color: white;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-bold);
+    min-width: 20px;
+    height: 20px;
+    padding: 0 var(--space-2);
+    border-radius: 10px;
+    line-height: 1;
+}
+
+/* Pings Sections - Only show active section */
+.pings-section.active {
+    display: block;
+}
+
+/* Fade in animation for sections */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.pings-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.pings-list .empty-state {
+    text-align: center;
+    padding: var(--space-8) var(--space-4);
+    color: var(--color-text-subtle);
+    font-style: italic;
+    font-size: var(--font-size-base);
 }
 
 .ping-item {
     padding: 16px;
-    border-bottom: 1px solid #2d2d2d;
     cursor: pointer;
     transition: background-color 0.2s;
-    margin-bottom: 12px;
     border-radius: 8px;
     border: 1px solid #2d2d2d;
-}
-
-.ping-item:last-child {
-    border-bottom: 1px solid #2d2d2d;
-    margin-bottom: 0;
+    background-color: #1e1e1e;
 }
 
 .ping-item:hover {

@@ -300,13 +300,10 @@
     height: 100%;
     /* padding: var(--space-5); */ /* This is already handled by .main-content */
     box-sizing: border-box;
-    gap: var(--space-6);
     overflow: hidden;
 }
 
-#claimView h2 {
-    margin-bottom: var(--space-4);
-}
+/* Header spacing now handled by .view-header in master.css */
 
 #casesContainer {
     display: flex;

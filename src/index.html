@@ -21,6 +21,7 @@
             overflow-y: auto;
             flex: 1;
             min-height: 0;
+            padding-right: 8px;
         }
     </style>
     <link rel="stylesheet" href="styles/left-sidebar.css">
@@ -206,10 +207,37 @@
             <!-- Pings view -->
             <div id="pingsView" style="display: none;">
                 <div class="view-header">
-                    <h2>Notifications</h2>
+                    <h2>Pings</h2>
                 </div>
-                <div id="pingsContainer">
-                    <div class="pings-list"></div>
+                
+                <!-- Ping Tabs Navigation -->
+                <div class="pings-tabs">
+                    <button class="ping-tab active" data-tab="active">
+                        Active Pings
+                        <span class="ping-count" id="activeCount" style="display: none;">0</span>
+                    </button>
+                    <button class="ping-tab" data-tab="acknowledged">
+                        Acknowledged Pings
+                        <span class="ping-count" id="acknowledgedCount" style="display: none;">0</span>
+                    </button>
+                    <button class="ping-tab" data-tab="completed">Completed Pings</button>
+                </div>
+                
+                <div id="pingsContainer" class="custom-scrollbar">
+                    <!-- Active Pings Section -->
+                    <div class="pings-section active" id="activePingsSection">
+                        <div class="pings-list" id="activePingsList"></div>
+                    </div>
+                    
+                    <!-- Acknowledged Pings Section -->
+                    <div class="pings-section" id="acknowledgedPingsSection">
+                        <div class="pings-list" id="acknowledgedPingsList"></div>
+                    </div>
+                    
+                    <!-- Completed Pings Section -->
+                    <div class="pings-section" id="completedPingsSection">
+                        <div class="pings-list" id="completedPingsList"></div>
+                    </div>
                 </div>
             </div>
 
@@ -392,8 +420,12 @@
         Components are made globally accessible for cross-component communication
     -->
     <script type="module">
+        // Import utilities first
+        import errorHandler from './utils/error-handler.js';
+        import websocketManager from './utils/websocket-manager.js';
+
         // Import all components
-        import Sidebar from './components/left-sidebar.js';
+        import sidebar from './components/left-sidebar.js'; // Sidebar is already initialized
         import ClaimCase from './components/cases/claim-case.js';
         import CompletedCases from './components/completed-cases.js';
         import Announcements from './components/announcements.js';
@@ -404,19 +436,64 @@
         import RightSidebar from './components/right-sidebar.js';
         import ParentCase from './components/parent-case.js';
         import { createLoginPage } from './components/login.js';
-        import UserList from './components/user-list.js'; // Import UserList
+        import UserList from './components/user-list.js';
 
-        // Initialize all components
-        const home = new Home();
-        const claimCase = new ClaimCase();
-        const completedCases = new CompletedCases();
-        const announcements = new Announcements();
-        const resources = new Resources();
-        const logsChat = new LogsChat();
-        const pings = new Pings();
-        const rightSidebar = new RightSidebar();
-        const parentCase = new ParentCase();
-        const userList = new UserList(); // Initialize UserList
+        // Make utilities globally accessible
+        window.errorHandler = errorHandler;
+        window.websocketManager = websocketManager;
+
+        // Initialize all components with error handling
+        // Note: sidebar is already initialized as a singleton
+        const home = errorHandler.initializeComponent(Home, 'Home');
+        const claimCase = errorHandler.initializeComponent(ClaimCase, 'ClaimCase');
+        const completedCases = errorHandler.initializeComponent(CompletedCases, 'CompletedCases');
+        const announcements = errorHandler.initializeComponent(Announcements, 'Announcements');
+        const resources = errorHandler.initializeComponent(Resources, 'Resources');
+        const logsChat = errorHandler.initializeComponent(LogsChat, 'LogsChat');
+        const pings = errorHandler.initializeComponent(Pings, 'Pings');
+        const rightSidebar = errorHandler.initializeComponent(RightSidebar, 'RightSidebar');
+        const parentCase = errorHandler.initializeComponent(ParentCase, 'ParentCase');
+        const userList = errorHandler.initializeComponent(UserList, 'UserList');
+
+        // Set up WebSocket message delegation to components
+        // The main WebSocket connection is created by ClaimCase, but all components should receive messages
+        const setupWebSocketDelegation = () => {
+            const ws = websocketManager.getConnection('caseflow');
+            if (ws) {
+                // Store original onmessage handler
+                const originalOnMessage = ws.onmessage;
+                
+                // Create delegating handler
+                ws.onmessage = (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+                        
+                        // Delegate to all components that have message handlers
+                        if (completedCases && completedCases.handleWebSocketMessage) {
+                            completedCases.handleWebSocketMessage(data);
+                        }
+                        if (pings && pings.handleWebSocketMessage) {
+                            pings.handleWebSocketMessage(data);
+                        }
+                        
+                        // Call original handler (from ClaimCase)
+                        if (originalOnMessage) {
+                            originalOnMessage(event);
+                        }
+                    } catch (error) {
+                        console.error('Error in WebSocket message delegation:', error);
+                    }
+                };
+                
+                console.log('✓ WebSocket message delegation set up');
+            } else {
+                // Retry after a short delay
+                setTimeout(setupWebSocketDelegation, 500);
+            }
+        };
+
+        // Set up delegation after a short delay to ensure WebSocket is connected
+        setTimeout(setupWebSocketDelegation, 1000);
 
         // Make components globally accessible for cross-component communication
         window.home = home;
@@ -428,11 +505,21 @@
         window.pings = pings;
         window.rightSidebar = rightSidebar;
         window.parentCase = parentCase;
-        window.userList = userList; // Make UserList globally accessible
+        window.userList = userList;
 
-        // Append UserList component to its container
-        document.getElementById('userManagementView').appendChild(userList.getContainer());
-        console.log("UserList container appended to:", userList.getContainer().parentNode.id); // Debug log
+        // Append UserList component to its container (with error handling)
+        if (userList && userList.getContainer) {
+            try {
+                const container = userList.getContainer();
+                const viewElement = document.getElementById('userManagementView');
+                if (container && viewElement) {
+                    viewElement.appendChild(container);
+                    console.log("✓ UserList container appended successfully");
+                }
+            } catch (error) {
+                console.error("✗ Failed to append UserList container:", error);
+            }
+        }
 
         // Function to switch views
         const switchView = (viewId) => {
