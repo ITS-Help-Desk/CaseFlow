@@ -1,9 +1,11 @@
 import { API_BASE_URL } from '../../config.js';
+import { hasMinimumRole } from '../utils/permissions.js';
 
 export default class UserList {
     constructor() {
         this.userListContainer = document.createElement('div');
         this.userListContainer.id = 'userListContainer';
+        this.userListContainer.className = 'users-list-container custom-scrollbar';
         this.users = [];
         this.roles = [];
 
@@ -64,108 +66,136 @@ export default class UserList {
     render() {
         console.log("Rendering UserList. Users to render:", this.users.length);
 
-        const currentUserString = localStorage.getItem('user');
-        let currentUserRoles = [];
-        if (currentUserString) {
-            const currentUser = JSON.parse(currentUserString);
-            currentUserRoles = currentUser.groups.map(group => group.name);
+        // Clear the container
+        this.userListContainer.innerHTML = '';
+
+        // Check if current user can edit roles (hierarchical)
+        const currentUsername = localStorage.getItem('username');
+        const currentUser = this.users.find(u => u.username === currentUsername);
+        let canEditRoles = false;
+        
+        if (currentUser && currentUser.groups) {
+            canEditRoles = hasMinimumRole(currentUser.groups, 'Lead');
         }
 
-        const canEditRoles = currentUserRoles.includes('Lead') || 
-                             currentUserRoles.includes('Phone Analyst') || 
-                             currentUserRoles.includes('Manager');
-
         if (this.users.length === 0) {
-            this.userListContainer.innerHTML += '<p>No users found.</p>';
+            this.userListContainer.innerHTML = '<div class="empty-state">No users found.</div>';
             return;
         }
 
-        const userTable = document.createElement('table');
-        userTable.innerHTML = `
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Username</th>
-                    <th>Roles</th>
-                    ${canEditRoles ? '<th>Actions</th>' : ''}
-                </tr>
-            </thead>
-            <tbody>
-            </tbody>
-        `;
-        const tbody = userTable.querySelector('tbody');
-        console.log("Table body found:", tbody);
-
+        // Create user cards
         this.users.forEach(user => {
-            console.log("Attempting to render user:", user.username);
-            const userRow = document.createElement('tr');
-            userRow.innerHTML = `
-                <td>${user.first_name} ${user.last_name}</td>
-                <td>${user.username}</td>
-                <td>${user.groups.map(group => group.name).join(', ')}</td>
-                ${canEditRoles ? `<td><button class="edit-roles-btn" data-user-id="${user.id}">Edit Roles</button></td>` : ''}
-            `;
-            tbody.appendChild(userRow);
-            console.log("Appended user row for:", user.username);
+            this.createUserCard(user, canEditRoles);
         });
 
-        this.userListContainer.appendChild(userTable);
-        console.log("User table appended to container.");
-
-        // Attach event listeners for edit buttons only if user can edit roles
-        if (canEditRoles) {
-            this.userListContainer.querySelectorAll('.edit-roles-btn').forEach(button => {
-                button.addEventListener('click', (event) => this.handleEditRoles(event.target.dataset.userId));
-            });
-        }
+        console.log("User cards rendered successfully.");
     }
 
-    handleEditRoles(userId) {
-        const userToEdit = this.users.find(user => user.id == userId);
-        if (!userToEdit) return;
+    createUserCard(user, canEditRoles) {
+        const card = document.createElement('div');
+        card.className = 'user-card';
+        card.dataset.userId = user.id;
 
-        const userRow = this.userListContainer.querySelector(`button[data-user-id="${userId}"]`).closest('tr');
-        if (!userRow) return;
+        // Get user's current roles
+        const userRoleNames = user.groups.map(g => g.name);
+        const displayRoles = userRoleNames.length > 0 ? userRoleNames.join(', ') : 'No roles assigned';
 
-        // Remove any existing editor rows to ensure only one is open at a time
-        const existingEditorRow = this.userListContainer.querySelector('.roles-editor-row');
-        if (existingEditorRow) {
-            existingEditorRow.remove();
-        }
-
-        const editorRow = document.createElement('tr');
-        editorRow.className = 'roles-editor-row';
-        editorRow.innerHTML = `
-            <td colspan="4">
-                <div class="roles-editor">
-                    <h4>Edit Roles for ${userToEdit.first_name} ${userToEdit.last_name} (${userToEdit.username})</h4>
-                    <div class="role-checkboxes">
-                        ${this.roles.map(role => `
-                            <label>
-                                <input type="checkbox" value="${role.name}" ${userToEdit.groups.some(g => g.name === role.name) ? 'checked' : ''}>
-                                ${role.name}
-                            </label>
-                        `).join('')}
-                    </div>
-                    <div class="roles-editor-actions">
-                        <button class="btn btn-primary save-roles-btn" data-user-id="${userId}">Save</button>
-                        <button class="btn btn-secondary cancel-edit-btn">Cancel</button>
+        card.innerHTML = `
+            <div class="user-card-left">
+                <div class="profile-icon">
+                    <div class="profile-placeholder">
+                        <i class="fas fa-user"></i>
                     </div>
                 </div>
-            </td>
+                <div class="user-info">
+                    <div class="user-header">
+                        <span class="user-name">${user.first_name} ${user.last_name}</span>
+                        <span class="username-text">@${user.username}</span>
+                    </div>
+                    <div class="user-meta">
+                        <span class="user-email">${user.email}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="user-card-right">
+                <div class="user-roles-display">
+                    <span class="roles-label">Roles:</span>
+                    <span class="roles-value">${displayRoles}</span>
+                </div>
+                <div class="role-selector">
+                    <div class="role-dropdown-wrapper ${canEditRoles ? '' : 'disabled'}">
+                        <button class="role-dropdown-button" type="button" ${canEditRoles ? '' : 'disabled'}>
+                            <span class="dropdown-label">Select Roles</span>
+                            <svg class="dropdown-icon" width="12" height="12" viewBox="0 0 12 12">
+                                <path fill="currentColor" d="M6 9L1 4h10z"/>
+                            </svg>
+                        </button>
+                        <div class="role-dropdown-menu" style="display: none;">
+                            ${this.roles.map(role => `
+                                <label class="role-option">
+                                    <input type="checkbox" 
+                                           value="${role.name}" 
+                                           ${userRoleNames.includes(role.name) ? 'checked' : ''}
+                                           ${canEditRoles ? '' : 'disabled'}>
+                                    <span>${role.name}</span>
+                                </label>
+                            `).join('')}
+                        </div>
+                    </div>
+                    ${canEditRoles ? `
+                        <button class="btn btn-primary btn-save-roles">Save Roles</button>
+                    ` : `
+                        <span class="permission-note">Requires Lead role or higher</span>
+                    `}
+                </div>
+            </div>
         `;
 
-        userRow.insertAdjacentElement('afterend', editorRow);
+        // Add event listeners for dropdown and save button
+        const dropdownButton = card.querySelector('.role-dropdown-button');
+        const dropdownMenu = card.querySelector('.role-dropdown-menu');
+        
+        // Toggle dropdown on button click
+        if (dropdownButton && canEditRoles) {
+            dropdownButton.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const isOpen = dropdownMenu.style.display === 'block';
+                
+                // Close all other dropdowns first
+                document.querySelectorAll('.role-dropdown-menu').forEach(menu => {
+                    menu.style.display = 'none';
+                });
+                
+                // Toggle current dropdown
+                dropdownMenu.style.display = isOpen ? 'none' : 'block';
+            });
+        }
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!card.contains(e.target)) {
+                if (dropdownMenu) {
+                    dropdownMenu.style.display = 'none';
+                }
+            }
+        });
+        
+        // Add event listener for save button if user can edit
+        if (canEditRoles) {
+            const saveButton = card.querySelector('.btn-save-roles');
+            
+            saveButton.addEventListener('click', async () => {
+                const checkboxes = card.querySelectorAll('.role-option input[type="checkbox"]:checked');
+                const selectedRoles = Array.from(checkboxes).map(cb => cb.value);
+                await this.updateUserRoles(user.id, selectedRoles);
+                dropdownMenu.style.display = 'none'; // Close dropdown after save
+            });
+        }
 
-        // Attach event listeners to the new buttons
-        editorRow.querySelector('.save-roles-btn').addEventListener('click', (event) => this.saveUserRoles(event.target.dataset.userId, editorRow));
-        editorRow.querySelector('.cancel-edit-btn').addEventListener('click', () => editorRow.remove());
+        this.userListContainer.appendChild(card);
     }
 
-    async saveUserRoles(userId, editorRow) {
-        const selectedRoleCheckboxes = editorRow.querySelectorAll('.role-checkboxes input[type="checkbox"]:checked');
-        const newRoles = Array.from(selectedRoleCheckboxes).map(checkbox => checkbox.value);
-
+    async updateUserRoles(userId, newRoles) {
         try {
             const authToken = localStorage.getItem('authToken');
             const response = await fetch(`${API_BASE_URL}/api/user/users/${userId}/edit_roles/`, {
@@ -181,13 +211,43 @@ export default class UserList {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            // Refresh the user list after successful update
+            const updatedUser = await response.json();
+            console.log(`Roles updated successfully for user ${userId}:`, updatedUser);
+
+            // Refresh the user list to show updated roles
             await this.fetchUsers();
             this.render();
-            console.log(`Roles for user ${userId} updated successfully.`);
+            
+            // Show success message
+            this.showNotification('Roles updated successfully!', 'success');
         } catch (error) {
             console.error("Error updating user roles:", error);
+            this.showNotification('Failed to update roles. Please try again.', 'error');
         }
+    }
+
+    showNotification(message, type) {
+        // Simple notification system
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.textContent = message;
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 24px;
+            background-color: ${type === 'success' ? 'var(--color-success)' : 'var(--color-danger)'};
+            color: white;
+            border-radius: var(--radius-base);
+            z-index: 10000;
+            animation: slideInRight 0.3s ease-out;
+        `;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
     }
 
     getContainer() {

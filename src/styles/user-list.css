@@ -1,58 +1,294 @@
-.user-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-    color: var(--text-color-light);
-}
+/* User Management Styles */
 
-.user-table th, .user-table td {
-    border: 1px solid var(--border-color);
-    padding: 10px;
-    text-align: left;
-}
-
-.user-table th {
-    background-color: var(--background-color-dark);
-}
-
-.roles-editor {
-    margin-top: 10px;
-    padding: 15px;
-    background-color: var(--background-color-light);
-    border-radius: var(--border-radius);
-}
-
-.roles-editor h4 {
-    margin-top: 0;
-    margin-bottom: 10px;
-    color: var(--text-color-light);
-}
-
-.role-checkboxes label {
-    display: block;
-    margin-bottom: 5px;
-    color: var(--text-color-light);
-}
-
-.role-checkboxes input[type="checkbox"] {
-    margin-right: 5px;
-}
-
-.roles-editor-actions {
-    margin-top: 15px;
+/* Container for user cards */
+.users-list-container {
     display: flex;
-    gap: 10px;
+    flex-direction: column;
+    gap: var(--space-4);
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+    padding-right: 8px;
+}
+
+/* User Card - Similar to case card */
+.user-card {
+    background-color: var(--color-bg-tertiary);
+    border-radius: var(--radius-base);
+    padding: var(--space-4);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all var(--transition-base);
+    gap: var(--space-4);
+    min-height: fit-content;
+    border: 1px solid transparent;
+}
+
+.user-card:hover {
+    background-color: var(--color-bg-hover);
+    border-color: var(--color-border-secondary);
+}
+
+/* Left side of card - user info */
+.user-card-left {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    flex: 1;
+    min-width: 0;
+}
+
+.user-card .profile-icon {
+    flex-shrink: 0;
+}
+
+.user-card .profile-placeholder {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-full);
+    background-color: var(--color-text-disabled);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-secondary);
+    font-size: 20px;
+}
+
+.user-info {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    flex: 1;
+    min-width: 0;
+}
+
+.user-header {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.user-name {
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-white);
+}
+
+.username-text {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    font-family: var(--font-family-mono);
+}
+
+.user-meta {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--color-text-subtle);
+    font-size: var(--font-size-sm);
+}
+
+.user-email {
+    color: var(--color-text-subtle);
+}
+
+/* Right side of card - roles and dropdown */
+.user-card-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: var(--space-3);
+    flex-shrink: 0;
+}
+
+.user-roles-display {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+}
+
+.roles-label {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    font-weight: var(--font-weight-medium);
+}
+
+.roles-value {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-white);
+    padding: var(--space-1) var(--space-3);
+    background-color: var(--color-bg-elevated);
+    border-radius: var(--radius-base);
+}
+
+/* Role selector */
+.role-selector {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+}
+
+/* Custom dropdown wrapper */
+.role-dropdown-wrapper {
+    position: relative;
+    min-width: 160px;
+}
+
+.role-dropdown-wrapper.disabled {
+    opacity: 0.6;
+}
+
+/* Dropdown button */
+.role-dropdown-button {
+    width: 100%;
+    padding: var(--space-2) var(--space-3);
+    background-color: var(--color-bg-elevated);
+    border: 1px solid var(--color-border-primary);
+    border-radius: var(--radius-base);
+    color: var(--color-text-primary);
+    font-size: var(--font-size-sm);
+    font-family: inherit;
+    cursor: pointer;
+    transition: all var(--transition-base);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-2);
+    outline: none;
+}
+
+.role-dropdown-button:hover:not(:disabled) {
+    border-color: var(--color-border-secondary);
+    background-color: var(--color-bg-hover);
+}
+
+.role-dropdown-button:disabled {
+    cursor: not-allowed;
+    background-color: var(--color-bg-secondary);
+}
+
+.role-dropdown-button .dropdown-icon {
+    transition: transform var(--transition-base);
+    flex-shrink: 0;
+}
+
+.role-dropdown-button:focus {
+    border-color: var(--color-brand-primary);
+}
+
+/* Dropdown menu */
+.role-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background-color: var(--color-bg-elevated);
+    border: 1px solid var(--color-border-secondary);
+    border-radius: var(--radius-base);
+    box-shadow: var(--shadow-lg);
+    z-index: var(--z-dropdown);
+    max-height: 200px;
+    overflow-y: auto;
+    padding: var(--space-1);
+}
+
+/* Role option (checkbox item) */
+.role-option {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: background-color var(--transition-fast);
+    user-select: none;
+}
+
+.role-option:hover {
+    background-color: var(--color-bg-hover);
+}
+
+.role-option input[type="checkbox"] {
+    cursor: pointer;
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    flex-shrink: 0;
+}
+
+.role-option input[type="checkbox"]:disabled {
+    cursor: not-allowed;
+}
+
+.role-option span {
+    color: var(--color-text-primary);
+    font-size: var(--font-size-sm);
+    flex: 1;
+}
+
+.btn-save-roles {
+    padding: var(--space-2) var(--space-4);
+    min-width: 100px;
+    white-space: nowrap;
+}
+
+.permission-note {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-subtle);
+    font-style: italic;
+    padding: var(--space-2) var(--space-3);
+    background-color: var(--color-bg-secondary);
+    border-radius: var(--radius-base);
+    text-align: center;
+    min-width: 100px;
+}
+
+/* Empty state */
+.users-list-container .empty-state {
+    text-align: center;
+    color: var(--color-text-muted);
+    padding: var(--space-8);
+    font-size: var(--font-size-base);
+}
+
+/* User Management View Layout */
+#userManagementView {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+#userManagementView .view-header {
+    padding-right: 8px;
+    margin-bottom: var(--space-4);
 }
 
 #userListContainer {
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: var(--space-4);
-    flex-basis: auto; /* Add this line to ensure it takes up space */
 }
 
-.roles-editor-row {
-    background-color: var(--color-bg-secondary);
-    border-left: 3px solid var(--color-brand-primary);
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+    .user-card {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .user-card-right {
+        width: 100%;
+        align-items: flex-start;
+    }
+    
+    .role-selector {
+        width: 100%;
+    }
+    
+    .role-dropdown {
+        flex: 1;
+    }
 }
