@@ -11,11 +11,14 @@ export default class Reports {
 
         this.isLoading = false;
         this.users = [];
+        this.evaluations = [];
+        this.currentEvaluation = null;
 
         this.setupTabs();
         this.setupCaseLookup();
         this.setupStatistics();
         this.setupEvaluations();
+        this.setupEvaluationCRUD();
     }
 
     // =========================================================================
@@ -580,15 +583,90 @@ export default class Reports {
     }
 
     // =========================================================================
-    // EVALUATIONS (GENEVAL)
+    // EVALUATIONS - SETUP
     // =========================================================================
 
     setupEvaluations() {
+        this.setupEvalSubtabs();
         this.populateGenEvalSelects();
+        this.populateEvalFormSelects();
 
         const btn = document.getElementById('genEvalBtn');
         if (btn) {
             btn.addEventListener('click', () => this.generateEvaluations());
+        }
+    }
+
+    setupEvalSubtabs() {
+        const subtabs = document.querySelectorAll('.eval-subtab');
+        const contents = document.querySelectorAll('.eval-content');
+
+        subtabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const target = tab.dataset.evaltab;
+
+                subtabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+
+                contents.forEach(c => c.classList.remove('active'));
+                const targetContent = document.getElementById(`eval${target.charAt(0).toUpperCase() + target.slice(1)}Content`);
+                if (targetContent) targetContent.classList.add('active');
+
+                if (target === 'list') this.loadEvaluationList();
+            });
+        });
+    }
+
+    populateEvalFormSelects() {
+        const waitForUsers = () => {
+            if (this.users.length > 0) {
+                const techSelect = document.getElementById('evalTech');
+                const filterTech = document.getElementById('evalFilterTech');
+                const filterEvaluator = document.getElementById('evalFilterEvaluator');
+
+                if (techSelect) {
+                    techSelect.innerHTML = '<option value="">Select a tech...</option>';
+                    this.users.forEach(user => {
+                        const opt = document.createElement('option');
+                        opt.value = user.id;
+                        opt.textContent = this.userMap[user.id];
+                        techSelect.appendChild(opt);
+                    });
+                }
+
+                if (filterTech) {
+                    filterTech.innerHTML = '<option value="">All Techs</option>';
+                    this.users.forEach(user => {
+                        const opt = document.createElement('option');
+                        opt.value = user.id;
+                        opt.textContent = this.userMap[user.id];
+                        filterTech.appendChild(opt);
+                    });
+                }
+
+                if (filterEvaluator) {
+                    filterEvaluator.innerHTML = '<option value="">All Evaluators</option>';
+                    this.users.forEach(user => {
+                        const opt = document.createElement('option');
+                        opt.value = user.id;
+                        opt.textContent = this.userMap[user.id];
+                        filterEvaluator.appendChild(opt);
+                    });
+                }
+            } else {
+                setTimeout(waitForUsers, 100);
+            }
+        };
+        waitForUsers();
+
+        const now = new Date();
+        const startInput = document.getElementById('evalPeriodStart');
+        const endInput = document.getElementById('evalPeriodEnd');
+        if (startInput && endInput) {
+            const firstOfMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+            const lastOfMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+            startInput.value = firstOfMonth.toISOString().split('T')[0];
+            endInput.value = lastOfMonth.toISOString().split('T')[0];
         }
     }
 
@@ -608,7 +686,7 @@ export default class Reports {
             const opt = document.createElement('option');
             opt.value = i + 1;
             opt.textContent = name;
-            if (i + 1 === now.getMonth()) opt.selected = true; // default to previous month
+            if (i + 1 === now.getMonth()) opt.selected = true;
             monthSelect.appendChild(opt);
         });
 
@@ -663,6 +741,559 @@ export default class Reports {
             btn.disabled = false;
             btn.textContent = 'Generate Evaluations';
         }
+    }
+
+    // =========================================================================
+    // EVALUATIONS - CRUD OPERATIONS
+    // =========================================================================
+
+    setupEvaluationCRUD() {
+        // Filter listeners
+        document.getElementById('evalFilterTech')?.addEventListener('change', () => this.loadEvaluationList());
+        document.getElementById('evalFilterEvaluator')?.addEventListener('change', () => this.loadEvaluationList());
+
+        // Preview metrics button
+        document.getElementById('evalPreviewBtn')?.addEventListener('click', () => this.previewEvalMetrics());
+
+        // Create form
+        document.getElementById('evalCreateForm')?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.createEvaluation();
+        });
+
+        document.getElementById('evalFormReset')?.addEventListener('click', () => this.resetEvalForm());
+
+        // Detail modal
+        document.getElementById('evalModalClose')?.addEventListener('click', () => this.closeModal('evalDetailModal'));
+        document.getElementById('evalModalEdit')?.addEventListener('click', () => this.openEditModal());
+        document.getElementById('evalModalDelete')?.addEventListener('click', () => this.openDeleteModal());
+
+        // Edit modal
+        document.getElementById('evalEditModalClose')?.addEventListener('click', () => this.closeModal('evalEditModal'));
+        document.getElementById('evalEditCancel')?.addEventListener('click', () => this.closeModal('evalEditModal'));
+        document.getElementById('evalEditSave')?.addEventListener('click', () => this.updateEvaluation());
+
+        // Delete modal
+        document.getElementById('evalDeleteModalClose')?.addEventListener('click', () => this.closeModal('evalDeleteModal'));
+        document.getElementById('evalDeleteCancel')?.addEventListener('click', () => this.closeModal('evalDeleteModal'));
+        document.getElementById('evalDeleteConfirm')?.addEventListener('click', () => this.deleteEvaluation());
+
+        // Close modals on overlay click
+        ['evalDetailModal', 'evalEditModal', 'evalDeleteModal'].forEach(id => {
+            document.getElementById(id)?.addEventListener('click', (e) => {
+                if (e.target.id === id) this.closeModal(id);
+            });
+        });
+    }
+
+    // --- LIST ---
+    async loadEvaluationList() {
+        const container = document.getElementById('evalListContainer');
+        if (!container) return;
+
+        container.innerHTML = this.renderLoading();
+
+        const techId = document.getElementById('evalFilterTech')?.value;
+        const evaluatorId = document.getElementById('evalFilterEvaluator')?.value;
+
+        let url = `${API_BASE_URL}/api/evaluation/list/`;
+        const params = new URLSearchParams();
+        if (techId) params.append('tech_id', techId);
+        if (evaluatorId) params.append('evaluator_id', evaluatorId);
+        if (params.toString()) url += `?${params.toString()}`;
+
+        try {
+            const res = await fetch(url, { headers: this.getAuthHeaders() });
+            if (!res.ok) throw new Error('Failed to load evaluations');
+
+            this.evaluations = await res.json();
+            this.renderEvaluationList(container);
+
+        } catch (error) {
+            console.error('Load evaluations error:', error);
+            container.innerHTML = `<div class="reports-error">Failed to load evaluations. Please try again.</div>`;
+        }
+    }
+
+    renderEvaluationList(container) {
+        if (this.evaluations.length === 0) {
+            container.innerHTML = `
+                <div class="lookup-empty">
+                    <svg width="48" height="48" viewBox="0 0 24 24"><path fill="currentColor" d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+                    <p>No evaluations found</p>
+                </div>
+            `;
+            return;
+        }
+
+        const ratingLabels = {
+            5: 'Outstanding',
+            4: 'Exceeds',
+            3: 'Meets',
+            2: 'Below',
+            1: 'Needs Improvement'
+        };
+
+        const rows = this.evaluations.map(ev => {
+            const techName = ev.tech_name || this.userMap[ev.tech] || `User #${ev.tech}`;
+            const evaluatorName = ev.evaluator_name || this.userMap[ev.evaluator] || `User #${ev.evaluator}`;
+            const rating = ev.overall_rating;
+            const ratingLabel = ratingLabels[rating] || '—';
+
+            return `
+                <tr data-eval-id="${ev.id}">
+                    <td>${this.escapeHtml(techName)}</td>
+                    <td>${this.formatDateShort(ev.period_start)} - ${this.formatDateShort(ev.period_end)}</td>
+                    <td>${this.escapeHtml(evaluatorName)}</td>
+                    <td>
+                        <span class="eval-rating-badge rating-${rating}">
+                            ${rating} - ${ratingLabel}
+                        </span>
+                    </td>
+                    <td>${this.formatDateShort(ev.created_at)}</td>
+                    <td class="eval-actions-cell" onclick="event.stopPropagation()">
+                        <button class="eval-action-btn view" title="View" data-action="view" data-id="${ev.id}">
+                            <svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                        </button>
+                        <button class="eval-action-btn edit" title="Edit" data-action="edit" data-id="${ev.id}">
+                            <svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                        </button>
+                        <button class="eval-action-btn delete" title="Delete" data-action="delete" data-id="${ev.id}">
+                            <svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+
+        container.innerHTML = `
+            <table class="eval-list-table">
+                <thead>
+                    <tr>
+                        <th>Tech</th>
+                        <th>Period</th>
+                        <th>Evaluator</th>
+                        <th>Rating</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>${rows}</tbody>
+            </table>
+        `;
+
+        // Add click handlers
+        container.querySelectorAll('tbody tr').forEach(row => {
+            row.addEventListener('click', () => {
+                const id = row.dataset.evalId;
+                this.openDetailModal(parseInt(id));
+            });
+        });
+
+        container.querySelectorAll('.eval-action-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const action = btn.dataset.action;
+                const id = parseInt(btn.dataset.id);
+                if (action === 'view') this.openDetailModal(id);
+                else if (action === 'edit') this.openEditModalById(id);
+                else if (action === 'delete') this.openDeleteModalById(id);
+            });
+        });
+    }
+
+    // --- PREVIEW METRICS ---
+    async previewEvalMetrics() {
+        const techId = document.getElementById('evalTech')?.value;
+        const startDate = document.getElementById('evalPeriodStart')?.value;
+        const endDate = document.getElementById('evalPeriodEnd')?.value;
+        const previewContent = document.getElementById('evalPreviewContent');
+        const previewCard = document.getElementById('evalPreviewCard');
+
+        if (!techId || !startDate || !endDate) {
+            alert('Please select a tech and date range first.');
+            return;
+        }
+
+        previewContent.innerHTML = this.renderLoading();
+
+        try {
+            const res = await fetch(
+                `${API_BASE_URL}/api/evaluation/generate/${techId}/?start_date=${startDate}&end_date=${endDate}`,
+                { headers: this.getAuthHeaders() }
+            );
+
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({ error: 'Failed to generate preview' }));
+                throw new Error(err.error || 'Failed to generate preview');
+            }
+
+            const data = await res.json();
+            this.renderMetricsPreview(data, previewContent);
+
+        } catch (error) {
+            console.error('Preview metrics error:', error);
+            previewContent.innerHTML = `<div class="reports-error">${this.escapeHtml(error.message)}</div>`;
+        }
+    }
+
+    renderMetricsPreview(data, container) {
+        const metrics = data.metrics || {};
+        const breakdown = data.breakdown || {};
+        const suggestedRating = data.suggested_rating;
+
+        const ratingLabels = {
+            5: 'Outstanding',
+            4: 'Exceeds Expectations',
+            3: 'Meets Expectations',
+            2: 'Below Expectations',
+            1: 'Needs Improvement'
+        };
+
+        container.innerHTML = `
+            <div class="eval-preview-metrics">
+                <div class="eval-preview-metric">
+                    <div class="eval-preview-metric-value">${metrics.cases_reviewed || 0}</div>
+                    <div class="eval-preview-metric-label">Cases</div>
+                </div>
+                <div class="eval-preview-metric">
+                    <div class="eval-preview-metric-value">${metrics.quality_score || 0}%</div>
+                    <div class="eval-preview-metric-label">Quality</div>
+                </div>
+                <div class="eval-preview-metric">
+                    <div class="eval-preview-metric-value">${metrics.ping_count || 0}</div>
+                    <div class="eval-preview-metric-label">Pings</div>
+                </div>
+                <div class="eval-preview-metric">
+                    <div class="eval-preview-metric-value">${metrics.kudos_count || 0}</div>
+                    <div class="eval-preview-metric-label">Kudos</div>
+                </div>
+            </div>
+            <div class="eval-preview-breakdown">
+                <h5>Status Breakdown</h5>
+                <div class="eval-preview-breakdown-grid">
+                    <div class="eval-preview-breakdown-item"><span>Kudos</span><span>${breakdown.kudos || 0}</span></div>
+                    <div class="eval-preview-breakdown-item"><span>Checked</span><span>${breakdown.checked || 0}</span></div>
+                    <div class="eval-preview-breakdown-item"><span>Done</span><span>${breakdown.done || 0}</span></div>
+                    <div class="eval-preview-breakdown-item"><span>Low Ping</span><span>${breakdown.pinged_low || 0}</span></div>
+                    <div class="eval-preview-breakdown-item"><span>Med Ping</span><span>${breakdown.pinged_med || 0}</span></div>
+                    <div class="eval-preview-breakdown-item"><span>High Ping</span><span>${breakdown.pinged_high || 0}</span></div>
+                </div>
+            </div>
+            ${suggestedRating ? `
+                <div class="eval-suggested-rating">
+                    <div class="eval-suggested-rating-label">Suggested Rating</div>
+                    <div class="eval-suggested-rating-value">${suggestedRating} - ${ratingLabels[suggestedRating]}</div>
+                </div>
+            ` : ''}
+        `;
+
+        // Auto-fill rating if suggested
+        if (suggestedRating) {
+            const ratingSelect = document.getElementById('evalRating');
+            if (ratingSelect && !ratingSelect.value) {
+                ratingSelect.value = suggestedRating;
+            }
+        }
+    }
+
+    // --- CREATE ---
+    async createEvaluation() {
+        const form = document.getElementById('evalCreateForm');
+        const submitBtn = form.querySelector('button[type="submit"]');
+
+        const techId = document.getElementById('evalTech')?.value;
+        const periodStart = document.getElementById('evalPeriodStart')?.value;
+        const periodEnd = document.getElementById('evalPeriodEnd')?.value;
+        const strengths = document.getElementById('evalStrengths')?.value;
+        const improvements = document.getElementById('evalImprovements')?.value;
+        const comments = document.getElementById('evalComments')?.value;
+        const rating = document.getElementById('evalRating')?.value;
+
+        if (!techId || !periodStart || !periodEnd || !rating) {
+            alert('Please fill in all required fields.');
+            return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Creating...';
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/evaluation/create/`, {
+                method: 'POST',
+                headers: this.getAuthHeaders(),
+                body: JSON.stringify({
+                    tech: parseInt(techId),
+                    period_start: periodStart,
+                    period_end: periodEnd,
+                    strengths: strengths || '',
+                    areas_for_improvement: improvements || '',
+                    additional_comments: comments || '',
+                    overall_rating: parseInt(rating)
+                })
+            });
+
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({ error: 'Failed to create evaluation' }));
+                throw new Error(err.error || 'Failed to create evaluation');
+            }
+
+            this.resetEvalForm();
+            alert('Evaluation created successfully!');
+
+            // Switch to list view
+            document.querySelector('.eval-subtab[data-evaltab="list"]')?.click();
+
+        } catch (error) {
+            console.error('Create evaluation error:', error);
+            alert(`Error: ${error.message}`);
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Create Evaluation';
+        }
+    }
+
+    resetEvalForm() {
+        document.getElementById('evalCreateForm')?.reset();
+        document.getElementById('evalPreviewContent').innerHTML = '';
+
+        // Reset date defaults
+        const now = new Date();
+        const startInput = document.getElementById('evalPeriodStart');
+        const endInput = document.getElementById('evalPeriodEnd');
+        if (startInput && endInput) {
+            const firstOfMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+            const lastOfMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+            startInput.value = firstOfMonth.toISOString().split('T')[0];
+            endInput.value = lastOfMonth.toISOString().split('T')[0];
+        }
+    }
+
+    // --- DETAIL MODAL ---
+    async openDetailModal(id) {
+        const modal = document.getElementById('evalDetailModal');
+        const body = document.getElementById('evalModalBody');
+
+        body.innerHTML = this.renderLoading();
+        modal.classList.add('active');
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/evaluation/detail/${id}/`, {
+                headers: this.getAuthHeaders()
+            });
+
+            if (!res.ok) throw new Error('Failed to load evaluation');
+
+            this.currentEvaluation = await res.json();
+            this.renderEvaluationDetail(body);
+
+        } catch (error) {
+            console.error('Load evaluation detail error:', error);
+            body.innerHTML = `<div class="reports-error">Failed to load evaluation details.</div>`;
+        }
+    }
+
+    renderEvaluationDetail(container) {
+        const ev = this.currentEvaluation;
+        if (!ev) return;
+
+        const techName = ev.tech_name || this.userMap[ev.tech] || `User #${ev.tech}`;
+        const evaluatorName = ev.evaluator_name || this.userMap[ev.evaluator] || `User #${ev.evaluator}`;
+
+        const ratingLabels = {
+            5: 'Outstanding',
+            4: 'Exceeds Expectations',
+            3: 'Meets Expectations',
+            2: 'Below Expectations',
+            1: 'Needs Improvement'
+        };
+
+        container.innerHTML = `
+            <div class="eval-detail-header">
+                <div class="eval-detail-meta">
+                    <div class="eval-detail-tech">${this.escapeHtml(techName)}</div>
+                    <div class="eval-detail-period">${this.formatDateShort(ev.period_start)} - ${this.formatDateShort(ev.period_end)}</div>
+                    <div class="eval-detail-evaluator">Evaluated by ${this.escapeHtml(evaluatorName)} on ${this.formatDateShort(ev.created_at)}</div>
+                </div>
+                <span class="eval-rating-badge rating-${ev.overall_rating}">
+                    ${ev.overall_rating} - ${ratingLabels[ev.overall_rating] || '—'}
+                </span>
+            </div>
+
+            ${(ev.cases_reviewed || ev.quality_score || ev.ping_count || ev.kudos_count) ? `
+                <div class="eval-detail-metrics">
+                    <div class="eval-detail-metric">
+                        <div class="eval-detail-metric-value">${ev.cases_reviewed || 0}</div>
+                        <div class="eval-detail-metric-label">Cases</div>
+                    </div>
+                    <div class="eval-detail-metric">
+                        <div class="eval-detail-metric-value">${ev.quality_score || 0}%</div>
+                        <div class="eval-detail-metric-label">Quality</div>
+                    </div>
+                    <div class="eval-detail-metric">
+                        <div class="eval-detail-metric-value">${ev.ping_count || 0}</div>
+                        <div class="eval-detail-metric-label">Pings</div>
+                    </div>
+                    <div class="eval-detail-metric">
+                        <div class="eval-detail-metric-value">${ev.kudos_count || 0}</div>
+                        <div class="eval-detail-metric-label">Kudos</div>
+                    </div>
+                </div>
+            ` : ''}
+
+            ${ev.strengths ? `
+                <div class="eval-detail-section">
+                    <div class="eval-detail-section-title">Strengths</div>
+                    <div class="eval-detail-section-content">${this.escapeHtml(ev.strengths)}</div>
+                </div>
+            ` : ''}
+
+            ${ev.areas_for_improvement ? `
+                <div class="eval-detail-section">
+                    <div class="eval-detail-section-title">Areas for Improvement</div>
+                    <div class="eval-detail-section-content">${this.escapeHtml(ev.areas_for_improvement)}</div>
+                </div>
+            ` : ''}
+
+            ${ev.additional_comments ? `
+                <div class="eval-detail-section">
+                    <div class="eval-detail-section-title">Additional Comments</div>
+                    <div class="eval-detail-section-content">${this.escapeHtml(ev.additional_comments)}</div>
+                </div>
+            ` : ''}
+        `;
+    }
+
+    // --- EDIT MODAL ---
+    openEditModal() {
+        if (!this.currentEvaluation) return;
+        this.closeModal('evalDetailModal');
+        this.populateEditForm(this.currentEvaluation);
+        document.getElementById('evalEditModal').classList.add('active');
+    }
+
+    async openEditModalById(id) {
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/evaluation/detail/${id}/`, {
+                headers: this.getAuthHeaders()
+            });
+
+            if (!res.ok) throw new Error('Failed to load evaluation');
+
+            this.currentEvaluation = await res.json();
+            this.populateEditForm(this.currentEvaluation);
+            document.getElementById('evalEditModal').classList.add('active');
+
+        } catch (error) {
+            console.error('Load evaluation for edit error:', error);
+            alert('Failed to load evaluation for editing.');
+        }
+    }
+
+    populateEditForm(ev) {
+        const techName = ev.tech_name || this.userMap[ev.tech] || `User #${ev.tech}`;
+
+        document.getElementById('evalEditId').value = ev.id;
+        document.getElementById('evalEditTechDisplay').value = techName;
+        document.getElementById('evalEditPeriodStart').value = ev.period_start;
+        document.getElementById('evalEditPeriodEnd').value = ev.period_end;
+        document.getElementById('evalEditStrengths').value = ev.strengths || '';
+        document.getElementById('evalEditImprovements').value = ev.areas_for_improvement || '';
+        document.getElementById('evalEditComments').value = ev.additional_comments || '';
+        document.getElementById('evalEditRating').value = ev.overall_rating || '';
+    }
+
+    async updateEvaluation() {
+        const id = document.getElementById('evalEditId')?.value;
+        const saveBtn = document.getElementById('evalEditSave');
+
+        if (!id) return;
+
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Saving...';
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/evaluation/update/${id}/`, {
+                method: 'PUT',
+                headers: this.getAuthHeaders(),
+                body: JSON.stringify({
+                    tech: this.currentEvaluation.tech,
+                    period_start: document.getElementById('evalEditPeriodStart').value,
+                    period_end: document.getElementById('evalEditPeriodEnd').value,
+                    strengths: document.getElementById('evalEditStrengths').value,
+                    areas_for_improvement: document.getElementById('evalEditImprovements').value,
+                    additional_comments: document.getElementById('evalEditComments').value,
+                    overall_rating: parseInt(document.getElementById('evalEditRating').value)
+                })
+            });
+
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({ error: 'Failed to update evaluation' }));
+                throw new Error(err.error || 'Failed to update evaluation');
+            }
+
+            this.closeModal('evalEditModal');
+            this.loadEvaluationList();
+            alert('Evaluation updated successfully!');
+
+        } catch (error) {
+            console.error('Update evaluation error:', error);
+            alert(`Error: ${error.message}`);
+        } finally {
+            saveBtn.disabled = false;
+            saveBtn.textContent = 'Save Changes';
+        }
+    }
+
+    // --- DELETE MODAL ---
+    openDeleteModal() {
+        if (!this.currentEvaluation) return;
+        document.getElementById('evalDeleteId').value = this.currentEvaluation.id;
+        this.closeModal('evalDetailModal');
+        document.getElementById('evalDeleteModal').classList.add('active');
+    }
+
+    openDeleteModalById(id) {
+        document.getElementById('evalDeleteId').value = id;
+        document.getElementById('evalDeleteModal').classList.add('active');
+    }
+
+    async deleteEvaluation() {
+        const id = document.getElementById('evalDeleteId')?.value;
+        const confirmBtn = document.getElementById('evalDeleteConfirm');
+
+        if (!id) return;
+
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = 'Deleting...';
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/evaluation/delete/${id}/`, {
+                method: 'DELETE',
+                headers: this.getAuthHeaders()
+            });
+
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({ error: 'Failed to delete evaluation' }));
+                throw new Error(err.error || 'Failed to delete evaluation');
+            }
+
+            this.closeModal('evalDeleteModal');
+            this.loadEvaluationList();
+            alert('Evaluation deleted successfully!');
+
+        } catch (error) {
+            console.error('Delete evaluation error:', error);
+            alert(`Error: ${error.message}`);
+        } finally {
+            confirmBtn.disabled = false;
+            confirmBtn.textContent = 'Delete';
+        }
+    }
+
+    // --- MODAL HELPERS ---
+    closeModal(modalId) {
+        document.getElementById(modalId)?.classList.remove('active');
     }
 
     // =========================================================================

@@ -567,9 +567,569 @@
 }
 
 /* =============================================
-   EVALUATIONS / GENEVAL SECTION
+   EVALUATIONS SECTION
    ============================================= */
 
+/* Evaluation Sub-tabs */
+.eval-subtabs {
+    display: flex;
+    gap: var(--space-2);
+    margin-bottom: var(--space-5);
+    border-bottom: 1px solid var(--color-border-primary);
+    padding-bottom: var(--space-3);
+    flex-shrink: 0;
+}
+
+.eval-subtab {
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    padding: var(--space-2) var(--space-4);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    border-radius: var(--radius-base);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-family: inherit;
+}
+
+.eval-subtab:hover {
+    color: var(--color-text-primary);
+    background: var(--color-bg-hover);
+}
+
+.eval-subtab.active {
+    color: var(--color-text-white);
+    background: var(--color-bg-active);
+    border-color: var(--color-border-secondary);
+}
+
+.eval-subtab svg {
+    opacity: 0.7;
+}
+
+.eval-subtab.active svg {
+    opacity: 1;
+}
+
+/* Evaluation Content Panels */
+.eval-content {
+    display: none;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.eval-content.active {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Evaluation List */
+.eval-list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-4);
+    flex-shrink: 0;
+}
+
+.eval-list-filters {
+    display: flex;
+    gap: var(--space-3);
+}
+
+.eval-list-container {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.eval-list-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--font-size-sm);
+}
+
+.eval-list-table thead th {
+    text-align: left;
+    padding: var(--space-3);
+    color: var(--color-text-subtle);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--color-border-primary);
+    position: sticky;
+    top: 0;
+    background-color: var(--color-bg-primary);
+    z-index: 1;
+}
+
+.eval-list-table tbody tr {
+    cursor: pointer;
+    transition: background-color var(--transition-base);
+}
+
+.eval-list-table tbody tr:hover {
+    background-color: var(--color-bg-hover);
+}
+
+.eval-list-table tbody td {
+    padding: var(--space-3);
+    color: var(--color-text-primary);
+    border-bottom: 1px solid var(--color-border-primary);
+}
+
+.eval-rating-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-base);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+}
+
+.eval-rating-badge.rating-5 {
+    background: rgba(59, 165, 92, 0.15);
+    color: var(--color-success-light);
+}
+
+.eval-rating-badge.rating-4 {
+    background: rgba(67, 97, 238, 0.15);
+    color: var(--color-brand-primary);
+}
+
+.eval-rating-badge.rating-3 {
+    background: rgba(250, 166, 26, 0.15);
+    color: var(--color-warning);
+}
+
+.eval-rating-badge.rating-2 {
+    background: rgba(249, 115, 22, 0.15);
+    color: #f97316;
+}
+
+.eval-rating-badge.rating-1 {
+    background: rgba(237, 66, 69, 0.15);
+    color: var(--color-danger);
+}
+
+.eval-actions-cell {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.eval-action-btn {
+    background: transparent;
+    border: none;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    padding: var(--space-1);
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-base);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.eval-action-btn:hover {
+    color: var(--color-text-white);
+    background: var(--color-bg-hover);
+}
+
+.eval-action-btn.delete:hover {
+    color: var(--color-danger);
+    background: rgba(237, 66, 69, 0.1);
+}
+
+/* Create Evaluation Form */
+.eval-form-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-6);
+    flex: 1;
+    min-height: 0;
+}
+
+@media (max-width: 1100px) {
+    .eval-form-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+.eval-form-left {
+    overflow-y: auto;
+}
+
+.eval-form-right {
+    overflow-y: auto;
+}
+
+.eval-form-card {
+    background-color: var(--color-bg-tertiary);
+    border: 1px solid var(--color-border-primary);
+    border-radius: var(--radius-lg);
+    padding: var(--space-6);
+}
+
+.eval-form-card h3 {
+    margin-bottom: var(--space-5);
+    color: var(--color-text-white);
+}
+
+.eval-form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4);
+    margin-bottom: var(--space-4);
+}
+
+.eval-form-row:has(> :only-child) {
+    grid-template-columns: 1fr;
+}
+
+.eval-form-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin-bottom: var(--space-4);
+}
+
+.eval-form-field:last-child {
+    margin-bottom: 0;
+}
+
+.eval-form-field label {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    font-weight: var(--font-weight-medium);
+}
+
+.eval-form-field input,
+.eval-form-field select,
+.eval-form-field textarea {
+    padding: var(--space-3);
+    border: 1px solid var(--color-border-primary);
+    border-radius: var(--radius-base);
+    background-color: var(--color-bg-secondary);
+    color: var(--color-text-primary);
+    font-size: var(--font-size-base);
+    font-family: inherit;
+    outline: none;
+    transition: all var(--transition-base);
+}
+
+.eval-form-field input:focus,
+.eval-form-field select:focus,
+.eval-form-field textarea:focus {
+    border-color: var(--color-brand-primary);
+    box-shadow: 0 0 0 1px var(--color-brand-primary);
+}
+
+.eval-form-field input:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.eval-form-field textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.eval-form-actions {
+    display: flex;
+    gap: var(--space-3);
+    margin-top: var(--space-5);
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--color-border-primary);
+}
+
+/* Metrics Preview Card */
+.eval-preview-card {
+    background-color: var(--color-bg-tertiary);
+    border: 1px solid var(--color-border-primary);
+    border-radius: var(--radius-lg);
+    padding: var(--space-6);
+    height: 100%;
+}
+
+.eval-preview-card h4 {
+    margin-bottom: var(--space-4);
+    color: var(--color-text-white);
+}
+
+.eval-preview-hint {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    text-align: center;
+    padding: var(--space-6);
+}
+
+.eval-preview-metrics {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-4);
+    margin-bottom: var(--space-5);
+}
+
+.eval-preview-metric {
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-base);
+    padding: var(--space-3);
+    text-align: center;
+}
+
+.eval-preview-metric-value {
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-white);
+    font-family: var(--font-family-mono);
+}
+
+.eval-preview-metric-label {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: var(--space-1);
+}
+
+.eval-preview-breakdown {
+    border-top: 1px solid var(--color-border-primary);
+    padding-top: var(--space-4);
+}
+
+.eval-preview-breakdown h5 {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-3);
+}
+
+.eval-preview-breakdown-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-2);
+}
+
+.eval-preview-breakdown-item {
+    display: flex;
+    justify-content: space-between;
+    font-size: var(--font-size-sm);
+    padding: var(--space-2);
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-sm);
+}
+
+.eval-preview-breakdown-item span:first-child {
+    color: var(--color-text-muted);
+}
+
+.eval-preview-breakdown-item span:last-child {
+    color: var(--color-text-primary);
+    font-family: var(--font-family-mono);
+}
+
+.eval-suggested-rating {
+    margin-top: var(--space-4);
+    padding: var(--space-4);
+    background: rgba(67, 97, 238, 0.1);
+    border: 1px solid rgba(67, 97, 238, 0.2);
+    border-radius: var(--radius-base);
+    text-align: center;
+}
+
+.eval-suggested-rating-label {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: var(--space-2);
+}
+
+.eval-suggested-rating-value {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-brand-primary);
+}
+
+/* Evaluation Modal */
+.eval-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: var(--space-6);
+}
+
+.eval-modal-overlay.active {
+    display: flex;
+}
+
+.eval-modal {
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border-primary);
+    border-radius: var(--radius-xl);
+    max-width: 600px;
+    width: 100%;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    animation: evalModalIn 0.2s ease-out;
+}
+
+.eval-modal-wide {
+    max-width: 700px;
+}
+
+.eval-modal-small {
+    max-width: 400px;
+}
+
+@keyframes evalModalIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.eval-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-5);
+    border-bottom: 1px solid var(--color-border-primary);
+    flex-shrink: 0;
+}
+
+.eval-modal-header h3 {
+    color: var(--color-text-white);
+}
+
+.eval-modal-close {
+    background: transparent;
+    border: none;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    padding: var(--space-1);
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-base);
+    display: flex;
+}
+
+.eval-modal-close:hover {
+    color: var(--color-text-white);
+    background: var(--color-bg-hover);
+}
+
+.eval-modal-body {
+    padding: var(--space-5);
+    overflow-y: auto;
+    flex: 1;
+}
+
+.eval-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-3);
+    padding: var(--space-5);
+    border-top: 1px solid var(--color-border-primary);
+    flex-shrink: 0;
+}
+
+/* Evaluation Detail View */
+.eval-detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: var(--space-5);
+}
+
+.eval-detail-meta {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.eval-detail-tech {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-white);
+}
+
+.eval-detail-period {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+}
+
+.eval-detail-evaluator {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-subtle);
+}
+
+.eval-detail-section {
+    margin-bottom: var(--space-5);
+}
+
+.eval-detail-section:last-child {
+    margin-bottom: 0;
+}
+
+.eval-detail-section-title {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-subtle);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: var(--space-2);
+}
+
+.eval-detail-section-content {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-primary);
+    line-height: var(--line-height-relaxed);
+    white-space: pre-wrap;
+}
+
+.eval-detail-metrics {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-3);
+    padding: var(--space-4);
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-base);
+    margin-bottom: var(--space-5);
+}
+
+.eval-detail-metric {
+    text-align: center;
+}
+
+.eval-detail-metric-value {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-white);
+    font-family: var(--font-family-mono);
+}
+
+.eval-detail-metric-label {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+}
+
+/* GenEval Section (unchanged, just moved) */
 .geneval-container {
     display: flex;
     align-items: center;

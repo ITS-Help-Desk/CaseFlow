@@ -319,25 +319,231 @@
 
                     <!-- Evaluations Section -->
                     <div class="reports-section" id="evalsSection">
-                        <div class="geneval-container">
-                            <div class="geneval-card">
-                                <div class="geneval-icon">
-                                    <svg width="48" height="48" viewBox="0 0 24 24"><path fill="currentColor" d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11zm-3-7h-2v2h-2v-2H9v-2h2V9h2v2h2v2z"/></svg>
+                        <!-- Evaluation Sub-tabs -->
+                        <div class="eval-subtabs">
+                            <button class="eval-subtab active" data-evaltab="list">
+                                <svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
+                                All Evaluations
+                            </button>
+                            <button class="eval-subtab" data-evaltab="create">
+                                <svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                                Create Evaluation
+                            </button>
+                            <button class="eval-subtab" data-evaltab="generate">
+                                <svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11zm-3-7h-2v2h-2v-2H9v-2h2V9h2v2h2v2z"/></svg>
+                                Generate Documents
+                            </button>
+                        </div>
+
+                        <!-- Evaluation List View -->
+                        <div class="eval-content active" id="evalListContent">
+                            <div class="eval-list-header">
+                                <div class="eval-list-filters">
+                                    <select id="evalFilterTech" class="stats-filter-select">
+                                        <option value="">All Techs</option>
+                                    </select>
+                                    <select id="evalFilterEvaluator" class="stats-filter-select">
+                                        <option value="">All Evaluators</option>
+                                    </select>
                                 </div>
-                                <h3>Generate Evaluation Documents</h3>
-                                <p>Auto-generate evaluation Word documents for all techs for a given month. Downloads as a ZIP file.</p>
-                                <div class="geneval-controls">
-                                    <div class="geneval-field">
-                                        <label for="genEvalMonth">Month</label>
-                                        <select id="genEvalMonth"></select>
-                                    </div>
-                                    <div class="geneval-field">
-                                        <label for="genEvalYear">Year</label>
-                                        <select id="genEvalYear"></select>
+                            </div>
+                            <div class="eval-list-container" id="evalListContainer">
+                                <div class="lookup-empty"><p>Loading evaluations...</p></div>
+                            </div>
+                        </div>
+
+                        <!-- Create Evaluation View -->
+                        <div class="eval-content" id="evalCreateContent">
+                            <div class="eval-form-container">
+                                <div class="eval-form-left">
+                                    <div class="eval-form-card">
+                                        <h3>Create New Evaluation</h3>
+                                        <form id="evalCreateForm">
+                                            <div class="eval-form-row">
+                                                <div class="eval-form-field">
+                                                    <label for="evalTech">Tech to Evaluate *</label>
+                                                    <select id="evalTech" required>
+                                                        <option value="">Select a tech...</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="eval-form-row">
+                                                <div class="eval-form-field">
+                                                    <label for="evalPeriodStart">Period Start *</label>
+                                                    <input type="date" id="evalPeriodStart" required />
+                                                </div>
+                                                <div class="eval-form-field">
+                                                    <label for="evalPeriodEnd">Period End *</label>
+                                                    <input type="date" id="evalPeriodEnd" required />
+                                                </div>
+                                            </div>
+                                            <div class="eval-form-row">
+                                                <button type="button" class="btn btn-secondary" id="evalPreviewBtn">
+                                                    <svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                                                    Preview Metrics
+                                                </button>
+                                            </div>
+                                            <div class="eval-form-field">
+                                                <label for="evalStrengths">Strengths</label>
+                                                <textarea id="evalStrengths" rows="3" placeholder="Note the tech's strengths..."></textarea>
+                                            </div>
+                                            <div class="eval-form-field">
+                                                <label for="evalImprovements">Areas for Improvement</label>
+                                                <textarea id="evalImprovements" rows="3" placeholder="Note areas for improvement..."></textarea>
+                                            </div>
+                                            <div class="eval-form-field">
+                                                <label for="evalComments">Additional Comments</label>
+                                                <textarea id="evalComments" rows="3" placeholder="Any additional comments..."></textarea>
+                                            </div>
+                                            <div class="eval-form-field">
+                                                <label for="evalRating">Overall Rating *</label>
+                                                <select id="evalRating" required>
+                                                    <option value="">Select rating...</option>
+                                                    <option value="5">5 - Outstanding</option>
+                                                    <option value="4">4 - Exceeds Expectations</option>
+                                                    <option value="3">3 - Meets Expectations</option>
+                                                    <option value="2">2 - Below Expectations</option>
+                                                    <option value="1">1 - Needs Improvement</option>
+                                                </select>
+                                            </div>
+                                            <div class="eval-form-actions">
+                                                <button type="submit" class="btn btn-primary">Create Evaluation</button>
+                                                <button type="button" class="btn btn-ghost" id="evalFormReset">Reset</button>
+                                            </div>
+                                        </form>
                                     </div>
                                 </div>
-                                <button class="btn btn-primary btn-lg" id="genEvalBtn">Generate Evaluations</button>
-                                <div id="genEvalStatus"></div>
+                                <div class="eval-form-right">
+                                    <div class="eval-preview-card" id="evalPreviewCard">
+                                        <h4>Metrics Preview</h4>
+                                        <p class="eval-preview-hint">Select a tech and date range, then click "Preview Metrics" to see their performance data.</p>
+                                        <div id="evalPreviewContent"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Generate Documents View -->
+                        <div class="eval-content" id="evalGenerateContent">
+                            <div class="geneval-container">
+                                <div class="geneval-card">
+                                    <div class="geneval-icon">
+                                        <svg width="48" height="48" viewBox="0 0 24 24"><path fill="currentColor" d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11zm-3-7h-2v2h-2v-2H9v-2h2V9h2v2h2v2z"/></svg>
+                                    </div>
+                                    <h3>Generate Evaluation Documents</h3>
+                                    <p>Auto-generate evaluation Word documents for all techs for a given month. Downloads as a ZIP file.</p>
+                                    <div class="geneval-controls">
+                                        <div class="geneval-field">
+                                            <label for="genEvalMonth">Month</label>
+                                            <select id="genEvalMonth"></select>
+                                        </div>
+                                        <div class="geneval-field">
+                                            <label for="genEvalYear">Year</label>
+                                            <select id="genEvalYear"></select>
+                                        </div>
+                                    </div>
+                                    <button class="btn btn-primary btn-lg" id="genEvalBtn">Generate Evaluations</button>
+                                    <div id="genEvalStatus"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Evaluation Detail Modal -->
+                    <div class="eval-modal-overlay" id="evalDetailModal">
+                        <div class="eval-modal">
+                            <div class="eval-modal-header">
+                                <h3>Evaluation Details</h3>
+                                <button class="eval-modal-close" id="evalModalClose">
+                                    <svg width="20" height="20" viewBox="0 0 24 24"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                                </button>
+                            </div>
+                            <div class="eval-modal-body" id="evalModalBody">
+                                <!-- Content loaded dynamically -->
+                            </div>
+                            <div class="eval-modal-footer" id="evalModalFooter">
+                                <button class="btn btn-secondary" id="evalModalEdit">Edit</button>
+                                <button class="btn btn-danger" id="evalModalDelete">Delete</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Evaluation Edit Modal -->
+                    <div class="eval-modal-overlay" id="evalEditModal">
+                        <div class="eval-modal eval-modal-wide">
+                            <div class="eval-modal-header">
+                                <h3>Edit Evaluation</h3>
+                                <button class="eval-modal-close" id="evalEditModalClose">
+                                    <svg width="20" height="20" viewBox="0 0 24 24"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                                </button>
+                            </div>
+                            <div class="eval-modal-body">
+                                <form id="evalEditForm">
+                                    <input type="hidden" id="evalEditId" />
+                                    <div class="eval-form-row">
+                                        <div class="eval-form-field">
+                                            <label>Tech</label>
+                                            <input type="text" id="evalEditTechDisplay" disabled />
+                                        </div>
+                                    </div>
+                                    <div class="eval-form-row">
+                                        <div class="eval-form-field">
+                                            <label for="evalEditPeriodStart">Period Start *</label>
+                                            <input type="date" id="evalEditPeriodStart" required />
+                                        </div>
+                                        <div class="eval-form-field">
+                                            <label for="evalEditPeriodEnd">Period End *</label>
+                                            <input type="date" id="evalEditPeriodEnd" required />
+                                        </div>
+                                    </div>
+                                    <div class="eval-form-field">
+                                        <label for="evalEditStrengths">Strengths</label>
+                                        <textarea id="evalEditStrengths" rows="3"></textarea>
+                                    </div>
+                                    <div class="eval-form-field">
+                                        <label for="evalEditImprovements">Areas for Improvement</label>
+                                        <textarea id="evalEditImprovements" rows="3"></textarea>
+                                    </div>
+                                    <div class="eval-form-field">
+                                        <label for="evalEditComments">Additional Comments</label>
+                                        <textarea id="evalEditComments" rows="3"></textarea>
+                                    </div>
+                                    <div class="eval-form-field">
+                                        <label for="evalEditRating">Overall Rating *</label>
+                                        <select id="evalEditRating" required>
+                                            <option value="">Select rating...</option>
+                                            <option value="5">5 - Outstanding</option>
+                                            <option value="4">4 - Exceeds Expectations</option>
+                                            <option value="3">3 - Meets Expectations</option>
+                                            <option value="2">2 - Below Expectations</option>
+                                            <option value="1">1 - Needs Improvement</option>
+                                        </select>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="eval-modal-footer">
+                                <button class="btn btn-ghost" id="evalEditCancel">Cancel</button>
+                                <button class="btn btn-primary" id="evalEditSave">Save Changes</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Delete Confirmation Modal -->
+                    <div class="eval-modal-overlay" id="evalDeleteModal">
+                        <div class="eval-modal eval-modal-small">
+                            <div class="eval-modal-header">
+                                <h3>Delete Evaluation</h3>
+                                <button class="eval-modal-close" id="evalDeleteModalClose">
+                                    <svg width="20" height="20" viewBox="0 0 24 24"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                                </button>
+                            </div>
+                            <div class="eval-modal-body">
+                                <p>Are you sure you want to delete this evaluation? This action cannot be undone.</p>
+                                <input type="hidden" id="evalDeleteId" />
+                            </div>
+                            <div class="eval-modal-footer">
+                                <button class="btn btn-ghost" id="evalDeleteCancel">Cancel</button>
+                                <button class="btn btn-danger" id="evalDeleteConfirm">Delete</button>
                             </div>
                         </div>
                     </div>
