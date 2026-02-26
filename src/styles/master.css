@@ -105,6 +105,115 @@
 }
 
 /* =============================================================================
+   CUSTOM SCROLLBARS
+   ============================================================================= */
+
+/* Webkit browsers (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-secondary);
+  border-radius: var(--radius-full);
+  border: 2px solid var(--color-bg-secondary);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-subtle);
+}
+
+::-webkit-scrollbar-corner {
+  background: var(--color-bg-secondary);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-secondary) var(--color-bg-secondary);
+}
+
+/* Thin scrollbars for smaller containers */
+.thin-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  border-width: 1px;
+}
+
+/* Hide scrollbar but keep functionality */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Ensure consistent scrollbar styling for all scrollable containers */
+#casesContainer,
+#completedContainer,
+#pingsContainer,
+#userListContainer,
+#homeContainer,
+#logsContainer,
+#reportsContent,
+.users-list-container,
+.pings-list,
+.logs-messages,
+.eval-list-container,
+.eval-form-left,
+.eval-form-right,
+.stats-panel-body,
+.lookup-result,
+.modal-content,
+.eval-modal-body,
+.role-dropdown-menu,
+textarea,
+select {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-secondary) var(--color-bg-secondary);
+}
+
+/* Textarea and select specific scrollbar styling */
+textarea::-webkit-scrollbar,
+select::-webkit-scrollbar {
+  width: 6px;
+}
+
+textarea::-webkit-scrollbar-track,
+select::-webkit-scrollbar-track {
+  background: var(--color-bg-tertiary);
+  border-radius: var(--radius-base);
+}
+
+textarea::-webkit-scrollbar-thumb,
+select::-webkit-scrollbar-thumb {
+  background: var(--color-border-secondary);
+  border-radius: var(--radius-base);
+}
+
+textarea::-webkit-scrollbar-thumb:hover,
+select::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-subtle);
+}
+
+/* Modal scrollbar - slightly darker track to match modal background */
+.modal-content::-webkit-scrollbar-track,
+.eval-modal-body::-webkit-scrollbar-track {
+  background: var(--color-bg-tertiary);
+}
+
+/* =============================================================================
    RESET & BASE STYLES
    ============================================================================= */
 

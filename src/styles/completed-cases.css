@@ -172,8 +172,7 @@
     }
 }
 
-/* Scrollbar styling */
-/* Scrollbar styles consolidated below at line ~560 */
+/* Scrollbar styling inherited from master.css */
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
@@ -543,25 +542,7 @@
     background-color: #3d4045;
 }
 
-/* Enhanced scrollbar styles */
-/* Scrollbar styling - matches custom-scrollbar class */
-#completedContainer::-webkit-scrollbar {
-    width: 8px;
-}
-
-#completedContainer::-webkit-scrollbar-track {
-    background: var(--color-bg-secondary);
-    border-radius: var(--radius-base);
-}
-
-#completedContainer::-webkit-scrollbar-thumb {
-    background: var(--color-bg-active);
-    border-radius: var(--radius-base);
-}
-
-#completedContainer::-webkit-scrollbar-thumb:hover {
-    background: var(--color-border-secondary);
-}
+/* Scrollbar styling inherited from master.css */
 
 /* Update responsive adjustments to use CSS variables */
 :root {
