@@ -14,9 +14,13 @@ export default class Reports {
         this.evaluations = [];
         this.currentEvaluation = null;
 
+        this.scheduleSection = document.getElementById('scheduleSection');
+        this.scheduleData = [];
+
         this.setupTabs();
         this.setupCaseLookup();
         this.setupStatistics();
+        this.setupScheduleStats();
         this.setupEvaluations();
         this.setupEvaluationCRUD();
     }
@@ -54,6 +58,7 @@ export default class Reports {
                 if (targetSection) targetSection.classList.add('active');
 
                 if (target === 'stats') this.loadAllStats();
+                if (target === 'schedule' && this.scheduleData.length > 0) this.renderScheduleStats();
             });
         });
     }
@@ -1294,6 +1299,550 @@ export default class Reports {
     // --- MODAL HELPERS ---
     closeModal(modalId) {
         document.getElementById(modalId)?.classList.remove('active');
+    }
+
+    // =========================================================================
+    // SCHEDULE STATS (ICS Parsing)
+    // =========================================================================
+
+    setupScheduleStats() {
+        const urlInput = document.getElementById('icsUrlInput');
+        const loadBtn = document.getElementById('loadIcsBtn');
+        const fileInput = document.getElementById('icsFileInput');
+        
+        // New date navigation controls
+        const prevBtn = document.getElementById('schedulePrevBtn');
+        const nextBtn = document.getElementById('scheduleNextBtn');
+        const todayBtn = document.getElementById('scheduleTodayBtn');
+        const viewModeSelect = document.getElementById('scheduleViewMode');
+
+        // Initialize current view date to today
+        this.scheduleViewDate = new Date();
+        this.scheduleViewMode = 'week';
+
+        if (loadBtn) {
+            loadBtn.addEventListener('click', () => this.loadIcsFromUrl());
+        }
+
+        if (urlInput) {
+            urlInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') this.loadIcsFromUrl();
+            });
+        }
+
+        if (fileInput) {
+            fileInput.addEventListener('change', (e) => this.loadIcsFromFile(e));
+        }
+
+        if (prevBtn) {
+            prevBtn.addEventListener('click', () => this.navigateSchedule(-1));
+        }
+
+        if (nextBtn) {
+            nextBtn.addEventListener('click', () => this.navigateSchedule(1));
+        }
+
+        if (todayBtn) {
+            todayBtn.addEventListener('click', () => {
+                this.scheduleViewDate = new Date();
+                this.renderScheduleStats();
+            });
+        }
+
+        if (viewModeSelect) {
+            viewModeSelect.addEventListener('change', (e) => {
+                this.scheduleViewMode = e.target.value;
+                this.renderScheduleStats();
+            });
+        }
+    }
+
+    navigateSchedule(direction) {
+        const mode = this.scheduleViewMode || 'week';
+        
+        if (mode === 'day') {
+            this.scheduleViewDate.setDate(this.scheduleViewDate.getDate() + direction);
+        } else if (mode === 'week') {
+            this.scheduleViewDate.setDate(this.scheduleViewDate.getDate() + (direction * 7));
+        }
+        
+        this.renderScheduleStats();
+    }
+
+    async loadIcsFromUrl() {
+        const input = document.getElementById('icsUrlInput');
+        const url = input?.value.trim();
+
+        if (!url) {
+            alert('Please enter a valid ICS URL');
+            return;
+        }
+
+        try {
+            // Show loading state
+            const emptyEl = document.getElementById('scheduleEmpty');
+            const resultsEl = document.getElementById('scheduleResults');
+            if (emptyEl) {
+                emptyEl.innerHTML = '<p>Loading calendar data...</p>';
+                emptyEl.style.display = 'block';
+            }
+            if (resultsEl) resultsEl.style.display = 'none';
+
+            let icsText;
+            
+            // Check if we're in Electron (Node.js environment available)
+            const hasNodeRequire = typeof window.require !== 'undefined';
+            console.log('Node require available:', hasNodeRequire);
+            
+            if (hasNodeRequire) {
+                // Use Node.js https module to bypass CORS
+                console.log('Using Node.js to fetch:', url);
+                icsText = await this.fetchWithNode(url);
+                console.log('Fetched ICS data length:', icsText?.length);
+            } else {
+                // Browser fallback - try fetch then CORS proxy
+                console.log('Node not available, using browser fetch');
+                try {
+                    const response = await fetch(url);
+                    if (!response.ok) throw new Error('Direct fetch failed');
+                    icsText = await response.text();
+                } catch (directError) {
+                    console.log('Direct fetch failed, trying CORS proxy...');
+                    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+                    const proxyResponse = await fetch(proxyUrl);
+                    if (!proxyResponse.ok) throw new Error('Proxy fetch also failed');
+                    icsText = await proxyResponse.text();
+                }
+            }
+
+            this.parseIcsData(icsText);
+        } catch (error) {
+            console.error('Error loading ICS:', error);
+            alert('Failed to load calendar from URL.\n\nTry downloading the .ics file and uploading it instead using the "Upload .ics File" button.');
+            this.resetScheduleEmpty();
+        }
+    }
+    
+    resetScheduleEmpty() {
+        const emptyEl = document.getElementById('scheduleEmpty');
+        const resultsEl = document.getElementById('scheduleResults');
+        if (emptyEl) {
+            emptyEl.innerHTML = `
+                <svg width="48" height="48" viewBox="0 0 24 24"><path fill="currentColor" d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM9 10H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm-8 4H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z"/></svg>
+                <p>Import a calendar file to view schedule statistics</p>
+            `;
+            emptyEl.style.display = 'block';
+        }
+        if (resultsEl) resultsEl.style.display = 'none';
+    }
+
+    fetchWithNode(urlString) {
+        return new Promise((resolve, reject) => {
+            try {
+                const https = window.require('https');
+                const http = window.require('http');
+                const { URL } = window.require('url');
+                
+                const parsedUrl = new URL(urlString);
+                const protocol = parsedUrl.protocol === 'https:' ? https : http;
+                
+                const options = {
+                    hostname: parsedUrl.hostname,
+                    path: parsedUrl.pathname + parsedUrl.search,
+                    method: 'GET',
+                    headers: {
+                        'User-Agent': 'CaseFlow-App/1.0'
+                    }
+                };
+
+                const req = protocol.request(options, (res) => {
+                    let data = '';
+                    
+                    // Handle redirects
+                    if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+                        this.fetchWithNode(res.headers.location).then(resolve).catch(reject);
+                        return;
+                    }
+                    
+                    if (res.statusCode !== 200) {
+                        reject(new Error(`HTTP ${res.statusCode}`));
+                        return;
+                    }
+                    
+                    res.on('data', chunk => data += chunk);
+                    res.on('end', () => resolve(data));
+                });
+
+                req.on('error', (err) => {
+                    console.error('Node request error:', err);
+                    reject(err);
+                });
+                req.setTimeout(30000, () => {
+                    req.destroy();
+                    reject(new Error('Request timeout'));
+                });
+                req.end();
+            } catch (err) {
+                console.error('fetchWithNode error:', err);
+                reject(err);
+            }
+        });
+    }
+
+    loadIcsFromFile(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            this.parseIcsData(e.target.result);
+        };
+        reader.onerror = () => {
+            alert('Failed to read file');
+        };
+        reader.readAsText(file);
+    }
+
+    parseIcsData(icsText) {
+        const events = [];
+        const lines = icsText.split(/\r?\n/);
+
+        let currentEvent = null;
+        let inEvent = false;
+
+        for (let i = 0; i < lines.length; i++) {
+            let line = lines[i];
+
+            // Handle line continuations (lines starting with space or tab)
+            while (i + 1 < lines.length && (lines[i + 1].startsWith(' ') || lines[i + 1].startsWith('\t'))) {
+                i++;
+                line += lines[i].substring(1);
+            }
+
+            if (line === 'BEGIN:VEVENT') {
+                inEvent = true;
+                currentEvent = {};
+            } else if (line === 'END:VEVENT') {
+                if (currentEvent && currentEvent.start && currentEvent.end) {
+                    events.push(currentEvent);
+                }
+                currentEvent = null;
+                inEvent = false;
+            } else if (inEvent && currentEvent) {
+                if (line.startsWith('SUMMARY:') || line.startsWith('SUMMARY;')) {
+                    currentEvent.summary = line.split(':').slice(1).join(':');
+                } else if (line.startsWith('DTSTART')) {
+                    currentEvent.start = this.parseIcsDate(line);
+                } else if (line.startsWith('DTEND')) {
+                    currentEvent.end = this.parseIcsDate(line);
+                } else if (line.startsWith('DESCRIPTION:') || line.startsWith('DESCRIPTION;')) {
+                    currentEvent.description = line.split(':').slice(1).join(':');
+                } else if (line.startsWith('LOCATION:')) {
+                    currentEvent.location = line.split(':').slice(1).join(':');
+                }
+            }
+        }
+
+        this.scheduleData = events.map(e => ({
+            ...e,
+            name: this.extractNameFromEvent(e),
+            role: this.determineRole(e),
+            durationHours: (e.end - e.start) / (1000 * 60 * 60)
+        }));
+
+        console.log(`Parsed ${this.scheduleData.length} events`);
+        
+        // Debug: log walk-in shifts
+        const walkInShifts = this.scheduleData.filter(e => 
+            e.summary && e.summary.toLowerCase().includes('walk')
+        );
+        console.log('Walk-in shifts found:', walkInShifts.map(e => ({
+            name: e.name,
+            summary: e.summary,
+            role: e.role,
+            date: e.start.toLocaleDateString()
+        })));
+        
+        try {
+            this.renderScheduleStats();
+        } catch (renderError) {
+            console.error('Error rendering schedule stats:', renderError);
+            alert('Calendar data loaded but failed to render. Check console for details.');
+            this.resetScheduleEmpty();
+        }
+    }
+
+    parseIcsDate(line) {
+        // Extract the date value (after the colon)
+        const parts = line.split(':');
+        const dateStr = parts[parts.length - 1];
+
+        // Handle different date formats
+        // YYYYMMDD (all day)
+        // YYYYMMDDTHHMMSS (local time)
+        // YYYYMMDDTHHMMSSZ (UTC)
+
+        if (dateStr.length === 8) {
+            // All day event: YYYYMMDD
+            const year = parseInt(dateStr.substring(0, 4));
+            const month = parseInt(dateStr.substring(4, 6)) - 1;
+            const day = parseInt(dateStr.substring(6, 8));
+            return new Date(year, month, day);
+        } else if (dateStr.includes('T')) {
+            // Date with time
+            const year = parseInt(dateStr.substring(0, 4));
+            const month = parseInt(dateStr.substring(4, 6)) - 1;
+            const day = parseInt(dateStr.substring(6, 8));
+            const hour = parseInt(dateStr.substring(9, 11));
+            const minute = parseInt(dateStr.substring(11, 13));
+            const second = parseInt(dateStr.substring(13, 15)) || 0;
+
+            if (dateStr.endsWith('Z')) {
+                return new Date(Date.UTC(year, month, day, hour, minute, second));
+            } else {
+                return new Date(year, month, day, hour, minute, second);
+            }
+        }
+
+        return new Date(dateStr);
+    }
+
+    extractNameFromEvent(event) {
+        const summary = event.summary || '';
+        
+        // WhenIWork format: "Name (Shift as Role at Location)"
+        // Example: "Aditya Prakash (Shift as Student Lead at ITS Help Desk)"
+        const whenIWorkMatch = summary.match(/^(.+?)\s*\(Shift as/);
+        if (whenIWorkMatch) {
+            return whenIWorkMatch[1].trim();
+        }
+
+        // Handle shifts without a name: "Shift as Student Lead at ITS Help Desk"
+        if (summary.startsWith('Shift as ')) {
+            return 'Unassigned';
+        }
+
+        // Fallback patterns
+        if (summary.includes(' - ')) {
+            return summary.split(' - ')[0].trim();
+        }
+        if (summary.includes(': ')) {
+            return summary.split(': ').pop().trim();
+        }
+
+        return summary.trim();
+    }
+
+    determineRole(event) {
+        const summary = (event.summary || '').toLowerCase();
+        
+        // WhenIWork format detection
+        // "Student Lead" = Lead role
+        // "Student Tech" = Tech role
+        // "Walk-Ins" / "Walk Ins" = Tech role (walk-in desk duty)
+        // "Lead Team Meeting" = Lead role
+        
+        if (summary.includes('student lead') || summary.includes('lead team meeting')) {
+            return 'Lead';
+        }
+        // Check for walk-ins with various formats (hyphen, no hyphen, etc.)
+        if (summary.includes('student tech') || summary.includes('walk-in') || summary.includes('walk in') || summary.includes('walkin')) {
+            return 'Tech';
+        }
+
+        // Generic fallbacks
+        if (summary.includes('lead') || summary.includes('supervisor') || summary.includes('manager')) {
+            return 'Lead';
+        }
+        if (summary.includes('tech') || summary.includes('student') || summary.includes('assistant')) {
+            return 'Tech';
+        }
+
+        // Default to Tech if unclear
+        return 'Tech';
+    }
+
+    renderScheduleStats() {
+        const results = document.getElementById('scheduleResults');
+        const empty = document.getElementById('scheduleEmpty');
+
+        console.log('renderScheduleStats called, results el:', !!results, 'empty el:', !!empty);
+        console.log('scheduleData length:', this.scheduleData.length);
+
+        if (!results || !empty) {
+            console.error('Schedule elements not found in DOM');
+            return;
+        }
+
+        if (this.scheduleData.length === 0) {
+            results.style.display = 'none';
+            empty.style.display = 'block';
+            return;
+        }
+
+        empty.style.display = 'none';
+        results.style.display = 'block';
+
+        // Update date display
+        const dateDisplay = document.getElementById('scheduleDateDisplay');
+        if (dateDisplay) {
+            dateDisplay.textContent = this.getDateRangeDisplay();
+        }
+
+        const filteredData = this.filterScheduleByDateRange(this.scheduleData);
+        
+        // Show/hide weekly breakdown based on view mode
+        const weeklyPanel = document.getElementById('weeklyBreakdown')?.closest('.schedule-panel');
+        if (weeklyPanel) {
+            weeklyPanel.style.display = this.scheduleViewMode === 'day' ? 'none' : 'block';
+        }
+
+        // Calculate summary stats
+        const totalHours = filteredData.reduce((sum, e) => sum + e.durationHours, 0);
+        const techData = filteredData.filter(e => e.role === 'Tech');
+        const leadData = filteredData.filter(e => e.role === 'Lead');
+        const techHours = techData.reduce((sum, e) => sum + e.durationHours, 0);
+        const leadHours = leadData.reduce((sum, e) => sum + e.durationHours, 0);
+        const totalShifts = filteredData.length;
+        const avgShift = totalShifts > 0 ? totalHours / totalShifts : 0;
+
+        // Update summary cards (with null checks)
+        const totalTeamHoursEl = document.getElementById('totalTeamHours');
+        const totalTechHoursEl = document.getElementById('totalTechHours');
+        const totalShiftsEl = document.getElementById('totalShifts');
+        const avgShiftLengthEl = document.getElementById('avgShiftLength');
+        const totalLeadHoursEl = document.getElementById('totalLeadHours');
+        const scheduleDateRangeEl = document.getElementById('scheduleDateRange');
+        
+        if (totalTeamHoursEl) totalTeamHoursEl.textContent = totalHours.toFixed(1);
+        if (totalTechHoursEl) totalTechHoursEl.textContent = techHours.toFixed(1);
+        if (totalShiftsEl) totalShiftsEl.textContent = totalShifts;
+        if (avgShiftLengthEl) avgShiftLengthEl.textContent = avgShift.toFixed(1);
+        if (totalLeadHoursEl) totalLeadHoursEl.textContent = leadHours.toFixed(1);
+
+        // Update date range subtitle (showing actual data count)
+        if (scheduleDateRangeEl) {
+            if (filteredData.length > 0) {
+                scheduleDateRangeEl.textContent = `${filteredData.length} shifts found`;
+            } else {
+                scheduleDateRangeEl.textContent = 'No shifts in this period';
+            }
+        }
+
+        // Group by person
+        const byPerson = {};
+        filteredData.forEach(e => {
+            if (!byPerson[e.name]) {
+                byPerson[e.name] = { name: e.name, role: e.role, hours: 0, shifts: 0 };
+            }
+            byPerson[e.name].hours += e.durationHours;
+            byPerson[e.name].shifts += 1;
+        });
+
+        // Sort by hours descending
+        const personStats = Object.values(byPerson).sort((a, b) => b.hours - a.hours);
+
+        // Render table
+        const tableBody = document.getElementById('scheduleTableBody');
+        if (tableBody) {
+            tableBody.innerHTML = personStats.map(p => `
+                <tr class="${p.role.toLowerCase()}">
+                    <td>${this.escapeHtml(p.name)}</td>
+                    <td><span class="role-badge role-${p.role.toLowerCase()}">${p.role}</span></td>
+                    <td><strong>${p.hours.toFixed(1)}</strong></td>
+                    <td>${p.shifts}</td>
+                    <td>${(p.hours / p.shifts).toFixed(1)}</td>
+                </tr>
+            `).join('');
+        }
+
+        // Render weekly breakdown
+        this.renderWeeklyBreakdown(filteredData);
+    }
+
+    filterScheduleByDateRange(data) {
+        const mode = this.scheduleViewMode || 'week';
+        
+        if (mode === 'all') return data;
+
+        const viewDate = this.scheduleViewDate || new Date();
+        let startDate, endDate;
+
+        if (mode === 'day') {
+            startDate = new Date(viewDate);
+            startDate.setHours(0, 0, 0, 0);
+            endDate = new Date(startDate);
+            endDate.setDate(startDate.getDate() + 1);
+        } else if (mode === 'week') {
+            startDate = new Date(viewDate);
+            startDate.setDate(viewDate.getDate() - viewDate.getDay()); // Sunday
+            startDate.setHours(0, 0, 0, 0);
+            endDate = new Date(startDate);
+            endDate.setDate(startDate.getDate() + 7);
+        }
+
+        return data.filter(e => e.start >= startDate && e.start < endDate);
+    }
+    
+    getDateRangeDisplay() {
+        const mode = this.scheduleViewMode || 'week';
+        const viewDate = this.scheduleViewDate || new Date();
+        
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        
+        if (mode === 'all') {
+            return 'All Data';
+        } else if (mode === 'day') {
+            return `${months[viewDate.getMonth()]} ${viewDate.getDate()}, ${viewDate.getFullYear()}`;
+        } else if (mode === 'week') {
+            const startDate = new Date(viewDate);
+            startDate.setDate(viewDate.getDate() - viewDate.getDay());
+            const endDate = new Date(startDate);
+            endDate.setDate(startDate.getDate() + 6);
+            
+            if (startDate.getMonth() === endDate.getMonth()) {
+                return `${months[startDate.getMonth()]} ${startDate.getDate()} - ${endDate.getDate()}, ${startDate.getFullYear()}`;
+            } else if (startDate.getFullYear() === endDate.getFullYear()) {
+                return `${months[startDate.getMonth()]} ${startDate.getDate()} - ${months[endDate.getMonth()]} ${endDate.getDate()}, ${startDate.getFullYear()}`;
+            } else {
+                return `${months[startDate.getMonth()]} ${startDate.getDate()}, ${startDate.getFullYear()} - ${months[endDate.getMonth()]} ${endDate.getDate()}, ${endDate.getFullYear()}`;
+            }
+        }
+        
+        return '';
+    }
+
+    renderWeeklyBreakdown(data) {
+        const container = document.getElementById('weeklyBreakdown');
+        if (!container) return;
+
+        // Group by day of week
+        const byDay = { 0: [], 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] };
+        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+        data.forEach(e => {
+            const day = e.start.getDay();
+            byDay[day].push(e);
+        });
+
+        container.innerHTML = dayNames.map((name, i) => {
+            const dayData = byDay[i];
+            const hours = dayData.reduce((sum, e) => sum + e.durationHours, 0);
+            const techHours = dayData.filter(e => e.role === 'Tech').reduce((sum, e) => sum + e.durationHours, 0);
+            const leadHours = hours - techHours;
+
+            return `
+                <div class="weekly-day-card">
+                    <div class="day-name">${name}</div>
+                    <div class="day-hours">${hours.toFixed(1)}h</div>
+                    <div class="day-breakdown">
+                        <span class="tech-hours">${techHours.toFixed(1)}h Tech</span>
+                        ${leadHours > 0 ? `<span class="lead-hours">${leadHours.toFixed(1)}h Lead</span>` : ''}
+                    </div>
+                    <div class="day-shifts">${dayData.length} shifts</div>
+                </div>
+            `;
+        }).join('');
     }
 
     // =========================================================================

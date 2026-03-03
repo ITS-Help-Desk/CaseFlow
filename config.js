@@ -4,6 +4,7 @@
 // API Configuration
 export const API_BASE_URL = 'http://10.80.16.166:8000';
 
+
 // WebSocket Configuration
 // Extract host from API_BASE_URL or set explicitly
 const API_HOST = API_BASE_URL.replace(/^https?:\/\//, ''); // Remove protocol
