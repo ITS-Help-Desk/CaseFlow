@@ -57,11 +57,42 @@
     gap: 0px;
 }
 
+.case-number-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
 .case-number {
     font-family: var(--font-family-mono);
     font-size: var(--font-size-sm);
     color: var(--color-text-white);
     font-weight: var(--font-weight-medium);
+}
+
+.btn-copy-case {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    padding: 3px;
+    border-radius: var(--radius-xs);
+    transition: all 0.15s ease;
+    opacity: 0.6;
+}
+
+.btn-copy-case:hover {
+    color: var(--color-text-white);
+    background: var(--color-bg-hover);
+    opacity: 1;
+}
+
+.btn-copy-case.copied {
+    color: #43b581;
+    opacity: 1;
 }
 
 .status-text {

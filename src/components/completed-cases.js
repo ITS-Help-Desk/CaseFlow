@@ -148,28 +148,33 @@ export default class CompletedCases {
      * Create a completed case card from API data
      * @param {Object} caseData - The case data from the API
      */
+    // Format case number to standard format (8 digits with leading zeros)
+    formatCaseNumber(input) {
+        if (!input || input === 'Unknown') return input;
+        const digitsOnly = String(input).replace(/\D/g, '');
+        if (digitsOnly.length === 0) return input;
+        if (digitsOnly.length <= 8) {
+            return digitsOnly.padStart(8, '0');
+        }
+        return digitsOnly;
+    }
+
     createCompletedCaseCard(caseData) {
         const card = document.createElement('div');
         card.className = 'case-card';
-        card.dataset.caseNumber = caseData.casenum || caseData.case_number;
-        card.dataset.caseId = caseData.id; // Store the database ID for API operations
         
-        // Debug: Check what fields are available
-        console.log('CompleteClaim data:', {
-            user_name: caseData.user_name,
-            user_id: caseData.user_id,
-            allFields: Object.keys(caseData)
-        });
+        // Format and store the case number
+        const rawCaseNumber = caseData.casenum || caseData.case_number || caseData.number || 'Unknown';
+        const caseNumber = this.formatCaseNumber(rawCaseNumber);
+        card.dataset.caseNumber = caseNumber;
+        card.dataset.caseId = caseData.id; // Store the database ID for API operations
         
         // Get user info from the case data
         // API provides user_name from serializer (the tech who completed the case)
         const userName = caseData.user_name || caseData.user_id?.username || 'Unknown User';
-        console.log('Using userName:', userName);
         const completedTime = caseData.complete_time || caseData.claim_time || caseData.timestamp ? 
             new Date(caseData.complete_time || caseData.claim_time || caseData.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 
             new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        
-        const caseNumber = caseData.casenum || caseData.case_number || caseData.number || 'Unknown';
         
         const originalActionsHTML = `
             <button class="btn btn-approve" title="Kudos">
@@ -203,7 +208,12 @@ export default class CompletedCases {
                 </div>
                 <div class="case-info">
                     <div class="case-header">
-                        <span class="case-number">${caseNumber}</span>
+                        <span class="case-number-row">
+                            <span class="case-number">${caseNumber}</span>
+                            <button class="btn-copy-case" data-case="${caseNumber}" title="Copy case number">
+                                <svg width="12" height="12" viewBox="0 0 24 24"><path fill="currentColor" d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+                            </button>
+                        </span>
                         <span class="status-text">Is completed by <span class="user-tag">@${userName}</span></span>
                     </div>
                     <div class="case-meta">
@@ -261,6 +271,27 @@ export default class CompletedCases {
             card.querySelector('.btn-claim-review').addEventListener('click', (e) => {
                 e.stopPropagation();
                 this.claimAndShowReview(card, originalActionsHTML);
+            });
+        }
+        
+        // Add click handler for copy button
+        const copyBtn = card.querySelector('.btn-copy-case');
+        if (copyBtn) {
+            copyBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const caseNum = copyBtn.dataset.case || card.dataset.caseNumber;
+                navigator.clipboard.writeText(caseNum).then(() => {
+                    // Show "Copied!" feedback
+                    copyBtn.classList.add('copied');
+                    copyBtn.title = 'Copied!';
+                    setTimeout(() => {
+                        copyBtn.classList.remove('copied');
+                        copyBtn.title = 'Copy case number';
+                    }, 1500);
+                }).catch(err => {
+                    console.error('Failed to copy:', err);
+                });
             });
         }
         

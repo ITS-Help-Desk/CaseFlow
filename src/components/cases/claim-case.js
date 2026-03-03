@@ -181,11 +181,54 @@ export default class ClaimCase {
         this.errorMessage.style.display = 'none';
     }
 
+    // Format case number to standard format (8 digits with leading zeros)
+    formatCaseNumber(input) {
+        // Remove any non-digit characters
+        const digitsOnly = input.replace(/\D/g, '');
+        
+        if (digitsOnly.length === 0) {
+            return null;
+        }
+        
+        // Pad with leading zeros to 8 digits (or keep as-is if longer for future-proofing)
+        if (digitsOnly.length <= 8) {
+            return digitsOnly.padStart(8, '0');
+        }
+        
+        // If longer than 8 digits, keep as-is (future-proofing for case numbers > 99999999)
+        return digitsOnly;
+    }
+
+    // Validate case number format
+    validateCaseNumber(input) {
+        const digitsOnly = input.replace(/\D/g, '');
+        
+        if (digitsOnly.length === 0) {
+            return { valid: false, error: 'Please enter a case number' };
+        }
+        
+        if (digitsOnly.length > 10) {
+            return { valid: false, error: 'Case number is too long (max 10 digits)' };
+        }
+        
+        return { valid: true };
+    }
+
     async submitClaim() {
         try {
-            const caseNumber = this.caseNumberInput.value.trim();
+            const rawInput = this.caseNumberInput.value.trim();
+            
+            // Validate the input
+            const validation = this.validateCaseNumber(rawInput);
+            if (!validation.valid) {
+                this.showError(validation.error);
+                return;
+            }
+            
+            // Format to standard 8-digit format
+            const caseNumber = this.formatCaseNumber(rawInput);
             if (!caseNumber) {
-                this.showError('Please enter a case number');
+                this.showError('Please enter a valid case number');
                 return;
             }
 
@@ -242,7 +285,11 @@ export default class ClaimCase {
     createCaseCard(caseData) {
         const card = document.createElement('div');
         card.className = 'case-card';
-        card.dataset.caseNumber = caseData.casenum; // Store the case number for future operations
+        
+        // Format and store the case number
+        const rawCaseNumber = caseData.casenum || caseData.case_number || caseData.number || 'Unknown';
+        const caseNumber = this.formatCaseNumber(rawCaseNumber) || rawCaseNumber;
+        card.dataset.caseNumber = caseNumber;
         
         // Get user info from the case data
         // API provides user_name from serializer
@@ -250,8 +297,6 @@ export default class ClaimCase {
         const claimedTime = caseData.claim_time ? 
             new Date(caseData.claim_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 
             new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        
-        const caseNumber = caseData.casenum || caseData.case_number || caseData.number || 'Unknown';
         
         card.innerHTML = `
             <div class="profile-icon">
@@ -261,7 +306,12 @@ export default class ClaimCase {
             </div>
             <div class="case-info">
                 <div class="case-header">
-                    <span class="case-number">${caseNumber}</span>
+                    <span class="case-number-row">
+                        <span class="case-number">${caseNumber}</span>
+                        <button class="btn-copy-case" title="Copy case number">
+                            <svg width="12" height="12" viewBox="0 0 24 24"><path fill="currentColor" d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+                        </button>
+                    </span>
                 </div>
                 <div class="case-meta">
                     <span class="claimed-label">Claimed by ${userName}</span>
@@ -283,6 +333,24 @@ export default class ClaimCase {
 
         card.querySelector('.btn-complete').addEventListener('click', () => this.completeCase(card));
         card.querySelector('.btn-unclaim').addEventListener('click', () => this.unclaimCase(card));
+        
+        // Add click handler for copy button
+        const copyBtn = card.querySelector('.btn-copy-case');
+        if (copyBtn) {
+            copyBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                navigator.clipboard.writeText(caseNumber).then(() => {
+                    // Show "Copied!" feedback
+                    copyBtn.classList.add('copied');
+                    copyBtn.title = 'Copied!';
+                    setTimeout(() => {
+                        copyBtn.classList.remove('copied');
+                        copyBtn.title = 'Copy case number';
+                    }, 1500);
+                });
+            });
+        }
 
         this.casesContainer.appendChild(card);
     }
