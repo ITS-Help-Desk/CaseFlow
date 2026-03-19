@@ -299,7 +299,7 @@
 
 /* Arrow in login button */
 .login-button::after {
-    content: '→';
+    content: '\2192';
     font-size: 16px;
     margin-left: 4px;
 }
