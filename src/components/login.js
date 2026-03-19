@@ -304,6 +304,7 @@ loginForm.addEventListener('submit', async (e) => {
         
         // Normal login - store credentials and proceed
         localStorage.setItem('authToken', data.token);
+        localStorage.setItem('isLoggedIn', 'true');
         localStorage.setItem('username', username);
         
         // Store user info if available
@@ -321,8 +322,10 @@ loginForm.addEventListener('submit', async (e) => {
     } catch (error) {
         showError(error.message || 'An error occurred. Please try again.');
     } finally {
-        loginButton.disabled = false;
-        loginButton.textContent = isLoginMode ? 'Sign in' : 'Sign up';
+        if (!isPasswordResetMode) {
+            loginButton.disabled = false;
+            loginButton.textContent = isLoginMode ? 'Sign in' : 'Sign up';
+        }
     }
 });
 
@@ -367,8 +370,9 @@ async function handlePasswordReset() {
         
         const data = await response.json();
         
-        // Store the new token (username was already stored before reset)
+        // Store the new token and mark as logged in (username was already stored before reset)
         localStorage.setItem('authToken', data.token);
+        localStorage.setItem('isLoggedIn', 'true');
         
         // Reset the form state
         pendingResetToken = null;
@@ -380,7 +384,6 @@ async function handlePasswordReset() {
         
     } catch (error) {
         showError(error.message || 'Failed to reset password. Please try again.');
-    } finally {
         loginButton.disabled = false;
         loginButton.textContent = 'Set Password';
     }
