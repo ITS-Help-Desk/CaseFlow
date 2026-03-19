@@ -1120,6 +1120,12 @@
         // Handle logout
         document.getElementById('logoutButton').addEventListener('click', () => {
             localStorage.removeItem('isLoggedIn');
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('username');
+            localStorage.removeItem('userId');
+            localStorage.removeItem('userEmail');
+            localStorage.removeItem('firstName');
+            localStorage.removeItem('lastName');
             window.location.reload();
         });
     </script>
