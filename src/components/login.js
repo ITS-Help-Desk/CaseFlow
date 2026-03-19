@@ -126,8 +126,10 @@ loginContent.className = 'login-content';
 loginContainer.appendChild(loginFormContainer);
 loginContainer.appendChild(loginContent);
 
-// Toggle between login and signup
+// Toggle between login, signup, and password reset
 let isLoginMode = true;
+let isPasswordResetMode = false;
+let pendingResetToken = null;  // Store token for password reset
 
 loginToggle.addEventListener('click', (e) => {
     e.preventDefault();
@@ -145,23 +147,60 @@ signupToggle.addEventListener('click', (e) => {
 
 function toggleForm(mode) {
     isLoginMode = mode === 'login';
+    isPasswordResetMode = mode === 'reset';
+    
     loginToggle.classList.toggle('active', isLoginMode);
-    signupToggle.classList.toggle('active', !isLoginMode);
+    signupToggle.classList.toggle('active', !isLoginMode && !isPasswordResetMode);
     
     const signupFields = loginForm.querySelectorAll('.signup-field');
     signupFields.forEach(field => {
-        field.style.display = isLoginMode ? 'none' : 'block';
+        field.style.display = isLoginMode || isPasswordResetMode ? 'none' : 'block';
     });
     
-    // Update the button text and class for proper styling
-    loginButton.textContent = isLoginMode ? 'Sign in' : 'Sign up';
-    loginButton.className = isLoginMode ? 'login-button' : 'login-button signup-button';
+    if (isPasswordResetMode) {
+        // Password reset mode - hide username, show password fields
+        usernameGroup.style.display = 'none';
+        passwordInput.placeholder = 'New Password';
+        confirmPasswordInput.style.display = 'block';
+        confirmPasswordInput.placeholder = 'Confirm New Password';
+        formToggle.style.display = 'none';
+        title.textContent = 'Set New Password';
+        loginButton.textContent = 'Set Password';
+        loginButton.className = 'login-button';
+    } else {
+        // Normal login/signup mode
+        usernameGroup.style.display = 'block';
+        passwordInput.placeholder = 'Password';
+        confirmPasswordInput.style.display = isLoginMode ? 'none' : 'block';
+        confirmPasswordInput.placeholder = 'Confirm your password';
+        formToggle.style.display = 'flex';
+        title.textContent = 'CaseFlow';
+        loginButton.textContent = isLoginMode ? 'Sign in' : 'Sign up';
+        loginButton.className = isLoginMode ? 'login-button' : 'login-button signup-button';
+    }
+    
     errorContainer.style.display = 'none';
+}
+
+function showPasswordResetForm(token) {
+    pendingResetToken = token;
+    toggleForm('reset');
+    
+    // Show a message explaining what's happening
+    errorContainer.textContent = 'Please set a new password to continue.';
+    errorContainer.style.display = 'block';
+    errorContainer.style.background = '#5865f2';  // Info color instead of error
 }
 
 // Handle form submission
 loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
+    
+    // Handle password reset mode
+    if (isPasswordResetMode) {
+        await handlePasswordReset();
+        return;
+    }
     
     const username = usernameInput.value;
     const password = passwordInput.value;
@@ -248,8 +287,32 @@ loginForm.addEventListener('submit', async (e) => {
             throw new Error('No authentication token received');
         }
         
+        // Check if user needs to reset password
+        if (data.must_reset_password) {
+            // Store username and user info for after reset
+            localStorage.setItem('username', username);
+            if (data.user) {
+                localStorage.setItem('userId', data.user.id);
+                localStorage.setItem('userEmail', data.user.email || '');
+                localStorage.setItem('firstName', data.user.first_name || '');
+                localStorage.setItem('lastName', data.user.last_name || '');
+            }
+            // Store token temporarily and show password reset form
+            showPasswordResetForm(data.token);
+            return;
+        }
+        
+        // Normal login - store credentials and proceed
         localStorage.setItem('authToken', data.token);
         localStorage.setItem('username', username);
+        
+        // Store user info if available
+        if (data.user) {
+            localStorage.setItem('userId', data.user.id);
+            localStorage.setItem('userEmail', data.user.email || '');
+            localStorage.setItem('firstName', data.user.first_name || '');
+            localStorage.setItem('lastName', data.user.last_name || '');
+        }
         
         // Hide login and show main content
         loginContainer.style.display = 'none';
@@ -262,6 +325,66 @@ loginForm.addEventListener('submit', async (e) => {
         loginButton.textContent = isLoginMode ? 'Sign in' : 'Sign up';
     }
 });
+
+// Handle password reset submission
+async function handlePasswordReset() {
+    const newPassword = passwordInput.value;
+    const confirmPassword = confirmPasswordInput.value;
+    
+    if (!newPassword) {
+        showError('Please enter a new password');
+        return;
+    }
+    
+    if (newPassword.length < 6) {
+        showError('Password must be at least 6 characters');
+        return;
+    }
+    
+    if (newPassword !== confirmPassword) {
+        showError('Passwords do not match');
+        return;
+    }
+    
+    loginButton.disabled = true;
+    loginButton.textContent = 'Setting password...';
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/user/reset-password/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'Authorization': `Token ${pendingResetToken}`
+            },
+            body: JSON.stringify({ new_password: newPassword })
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || 'Failed to reset password');
+        }
+        
+        const data = await response.json();
+        
+        // Store the new token (username was already stored before reset)
+        localStorage.setItem('authToken', data.token);
+        
+        // Reset the form state
+        pendingResetToken = null;
+        isPasswordResetMode = false;
+        
+        // Hide login and show main content
+        loginContainer.style.display = 'none';
+        document.getElementById('main-container').style.display = 'flex';
+        
+    } catch (error) {
+        showError(error.message || 'Failed to reset password. Please try again.');
+    } finally {
+        loginButton.disabled = false;
+        loginButton.textContent = 'Set Password';
+    }
+}
 
 function showError(message) {
     errorContainer.textContent = message;

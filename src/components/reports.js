@@ -257,17 +257,22 @@ export default class Reports {
         }
     }
 
+    getSelectedDays() {
+        return document.getElementById('statsPeriod')?.value || '30';
+    }
+
     async loadAllStats() {
         const userId = document.getElementById('caseHistoryUser')?.value;
+        const days = this.getSelectedDays();
 
         if (userId) {
-            await this.loadUserStatistics(parseInt(userId));
+            await this.loadUserStatistics(parseInt(userId), days);
         } else {
-            await this.loadGlobalStatistics();
+            await this.loadGlobalStatistics(days);
         }
     }
 
-    async loadGlobalStatistics() {
+    async loadGlobalStatistics(days) {
         const summaryGrid = document.getElementById('statsSummaryGrid');
         const pingStatsBody = document.getElementById('pingStatsBody');
         const caseHistoryBody = document.getElementById('caseHistoryBody');
@@ -278,13 +283,13 @@ export default class Reports {
         if (pingStatsBody) pingStatsBody.innerHTML = this.renderLoading();
         if (caseHistoryBody) caseHistoryBody.innerHTML = this.renderLoading();
 
+        const daysParam = days ? `days=${days}&` : '';
+
         try {
-            const [summaryRes, pingRes, activeRes, completeRes, reviewedRes] = await Promise.all([
-                fetch(`${API_BASE_URL}/api/reports/summary/`, { headers: this.getAuthHeaders() }),
+            const [summaryRes, pingRes, reviewedRes] = await Promise.all([
+                fetch(`${API_BASE_URL}/api/reports/summary/?${daysParam}`.replace(/[?&]$/, ''), { headers: this.getAuthHeaders() }),
                 fetch(`${API_BASE_URL}/api/reports/ping-stats/`, { headers: this.getAuthHeaders() }),
-                fetch(`${API_BASE_URL}/api/activeclaim/list/`, { headers: this.getAuthHeaders() }),
-                fetch(`${API_BASE_URL}/api/completeclaim/list/`, { headers: this.getAuthHeaders() }),
-                fetch(`${API_BASE_URL}/api/reviewedclaim/list/`, { headers: this.getAuthHeaders() })
+                fetch(`${API_BASE_URL}/api/reviewedclaim/list/?${daysParam}limit=50`, { headers: this.getAuthHeaders() })
             ]);
 
             if (summaryRes.ok) {
@@ -301,7 +306,13 @@ export default class Reports {
                 pingStatsBody.innerHTML = `<div class="reports-error">Failed to load ping stats</div>`;
             }
 
-            this.buildCaseHistoryFromResponses(null, activeRes, completeRes, reviewedRes, caseHistoryBody);
+            if (reviewedRes.ok) {
+                const reviewedData = await reviewedRes.json();
+                const reviewed = reviewedData.results || reviewedData;
+                this.renderCaseHistoryFromData(null, reviewed, caseHistoryBody);
+            } else if (caseHistoryBody) {
+                caseHistoryBody.innerHTML = `<div class="reports-error">Failed to load case history</div>`;
+            }
 
         } catch (error) {
             console.error('Statistics load error:', error);
@@ -309,7 +320,7 @@ export default class Reports {
         }
     }
 
-    async loadUserStatistics(userId) {
+    async loadUserStatistics(userId, days) {
         const summaryGrid = document.getElementById('statsSummaryGrid');
         const pingStatsBody = document.getElementById('pingStatsBody');
         const caseHistoryBody = document.getElementById('caseHistoryBody');
@@ -320,12 +331,12 @@ export default class Reports {
         if (pingStatsBody) pingStatsBody.innerHTML = this.renderLoading();
         if (caseHistoryBody) caseHistoryBody.innerHTML = this.renderLoading();
 
+        const daysParam = days ? `days=${days}&` : '';
+
         try {
-            const [userStatsRes, activeRes, completeRes, reviewedRes] = await Promise.all([
+            const [userStatsRes, reviewedRes] = await Promise.all([
                 fetch(`${API_BASE_URL}/api/reports/user/${userId}/`, { headers: this.getAuthHeaders() }),
-                fetch(`${API_BASE_URL}/api/activeclaim/list/`, { headers: this.getAuthHeaders() }),
-                fetch(`${API_BASE_URL}/api/completeclaim/list/`, { headers: this.getAuthHeaders() }),
-                fetch(`${API_BASE_URL}/api/reviewedclaim/list/`, { headers: this.getAuthHeaders() })
+                fetch(`${API_BASE_URL}/api/reviewedclaim/list/?${daysParam}user_id=${userId}&limit=50`, { headers: this.getAuthHeaders() })
             ]);
 
             if (userStatsRes.ok) {
@@ -335,11 +346,16 @@ export default class Reports {
                 summaryGrid.innerHTML = `<div class="reports-error">Failed to load user stats</div>`;
             }
 
-            // Build case history (filtered) and compute per-user ping stats from reviewed data
-            const reviewed = reviewedRes.ok ? await reviewedRes.json() : [];
-            const userReviewed = reviewed.filter(c => c.tech_id === userId);
-            this.renderUserPingStats(userReviewed, pingStatsBody);
-            this.buildCaseHistoryFromResponses(userId, activeRes, completeRes, { already: reviewed }, caseHistoryBody);
+            if (reviewedRes.ok) {
+                const reviewedData = await reviewedRes.json();
+                const reviewed = reviewedData.results || reviewedData;
+                const userReviewed = reviewed.filter(c => c.tech_id === userId);
+                this.renderUserPingStats(userReviewed, pingStatsBody);
+                this.renderCaseHistoryFromData(userId, reviewed, caseHistoryBody);
+            } else {
+                if (pingStatsBody) pingStatsBody.innerHTML = '';
+                if (caseHistoryBody) caseHistoryBody.innerHTML = `<div class="reports-error">Failed to load case history</div>`;
+            }
 
         } catch (error) {
             console.error('User statistics load error:', error);
@@ -347,7 +363,24 @@ export default class Reports {
         }
     }
 
+    renderCaseHistoryFromData(userId, reviewed, container) {
+        if (!container) return;
+
+        const rows = reviewed.map(c => ({
+            casenum: c.casenum,
+            date: c.review_time || c.complete_time || c.claim_time,
+            tech: this.userMap[c.tech_id] || `User #${c.tech_id}`,
+            reviewer: c.lead_id ? (this.userMap[c.lead_id] || `User #${c.lead_id}`) : '-',
+            status: c.status,
+            comment: c.comment || ''
+        }));
+
+        rows.sort((a, b) => new Date(b.date) - new Date(a.date));
+        this.renderCaseHistoryTable(rows, container);
+    }
+
     renderGlobalSummary(summary, container) {
+        const periodLabel = summary.period || '';
         const cards = [
             { label: 'Active Claims', value: summary.totals.active_claims, sub: `${summary.today.claimed} claimed today` },
             { label: 'Pending Review', value: summary.totals.pending_review, sub: `${summary.today.completed} completed today` },
