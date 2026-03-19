@@ -171,7 +171,7 @@
 }
 
 .unread .ping-title::before {
-    content: "•";
+    content: "\2022";
     color: #5865f2;
     margin-right: 6px;
 }
