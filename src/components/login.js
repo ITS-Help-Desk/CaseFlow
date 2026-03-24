@@ -276,11 +276,26 @@ loginForm.addEventListener('submit', async (e) => {
         });
 
         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.detail || errorData.message || 'Authentication failed');
+            let errorMessage = 'Authentication failed';
+            try {
+                const errorData = await response.json();
+                errorMessage = errorData.detail || errorData.message || errorMessage;
+            } catch {
+                if (response.status === 0) {
+                    errorMessage = 'Cannot reach the server. Please check your connection.';
+                } else {
+                    errorMessage = `Server error (${response.status}). Please try again later.`;
+                }
+            }
+            throw new Error(errorMessage);
         }
 
-        const data = await response.json();
+        let data;
+        try {
+            data = await response.json();
+        } catch {
+            throw new Error('Invalid response from server. Is the backend running?');
+        }
         
         // Store the authentication token
         if (!data.token) {
@@ -364,11 +379,22 @@ async function handlePasswordReset() {
         });
         
         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.detail || 'Failed to reset password');
+            let errorMessage = 'Failed to reset password';
+            try {
+                const errorData = await response.json();
+                errorMessage = errorData.detail || errorMessage;
+            } catch {
+                errorMessage = `Server error (${response.status}). Please try again later.`;
+            }
+            throw new Error(errorMessage);
         }
         
-        const data = await response.json();
+        let data;
+        try {
+            data = await response.json();
+        } catch {
+            throw new Error('Invalid response from server. Is the backend running?');
+        }
         
         // Store the new token and mark as logged in (username was already stored before reset)
         localStorage.setItem('authToken', data.token);
