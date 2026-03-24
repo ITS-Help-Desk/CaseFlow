@@ -379,22 +379,11 @@ async function handlePasswordReset() {
         });
         
         if (!response.ok) {
-            let errorMessage = 'Failed to reset password';
-            try {
-                const errorData = await response.json();
-                errorMessage = errorData.detail || errorMessage;
-            } catch {
-                errorMessage = `Server error (${response.status}). Please try again later.`;
-            }
-            throw new Error(errorMessage);
+            const errorData = await response.json();
+            throw new Error(errorData.detail || 'Failed to reset password');
         }
         
-        let data;
-        try {
-            data = await response.json();
-        } catch {
-            throw new Error('Invalid response from server. Is the backend running?');
-        }
+        const data = await response.json();
         
         // Store the new token and mark as logged in (username was already stored before reset)
         localStorage.setItem('authToken', data.token);

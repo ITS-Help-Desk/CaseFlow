@@ -5,7 +5,7 @@ const isElectron = typeof window !== 'undefined' && typeof window.process !== 'u
 
 // In Electron, use the direct Pi address. In a browser, use relative URLs
 // (Nginx proxies /api/ and /ws/ to Django automatically)
-const PI_ADDRESS = 'http://10.80.16.166:8000';
+const PI_ADDRESS = 'http://10.80.20.32:8000';
 export const API_BASE_URL = isElectron ? PI_ADDRESS : '';
 
 // WebSocket Configuration
